@@ -74,7 +74,7 @@ const FeaturedTournaments = () => {
       <div className="container mx-auto px-6">
         <div className="flex items-end justify-between mb-12">
           <div className="space-y-4">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
               COMPETE IN THE <span className="text-accent-blue">ARENA</span>.
             </h2>
             <p className="text-slate-500 font-medium max-w-xl">

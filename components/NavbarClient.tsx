@@ -58,14 +58,25 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
           </span>
         </Link>
 
-        <div className="hidden md:flex items-center space-x-8">
+        <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
-              className="flex items-center space-x-1 rounded-full px-3 py-2 text-sm font-semibold text-muted-foreground transition-all hover:bg-muted hover:text-accent-blue dark:hover:text-foreground"
+              className="group relative flex items-center rounded-full px-3 lg:px-4 py-2 text-sm font-bold text-muted-foreground outline-none transition-all duration-300 hover:text-accent-blue dark:hover:text-white"
             >
-              <span>{link.name}</span>
+              {/* Hover Background Layer */}
+              <div className="absolute inset-0 scale-75 rounded-full bg-accent-blue/10 opacity-0 transition-all duration-300 ease-out group-hover:scale-100 group-hover:opacity-100 dark:bg-white/5" />
+              
+              {/* Expanding Bottom Glow Line */}
+              <div className="absolute bottom-1 left-1/2 h-[3px] w-0 -translate-x-1/2 rounded-full bg-accent-blue opacity-0 transition-all duration-300 ease-out group-hover:w-3/5 group-hover:opacity-100 group-hover:shadow-[0_0_12px_rgba(37,99,235,0.8)] dark:bg-white dark:group-hover:shadow-[0_0_12px_rgba(255,255,255,0.6)]" />
+
+              <span className="relative z-10 flex items-center gap-1.5 lg:gap-2">
+                <span className="opacity-60 transition-all duration-300 group-hover:opacity-100 group-hover:text-accent-blue dark:group-hover:text-white">
+                  {link.icon}
+                </span>
+                <span className="tracking-wide">{link.name}</span>
+              </span>
             </Link>
           ))}
           {isAuthenticated && (
@@ -134,11 +145,13 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="flex items-center space-x-3 rounded-2xl px-3 py-2 text-lg font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  className="group flex items-center space-x-4 rounded-2xl px-4 py-3 text-lg font-bold text-muted-foreground transition-all duration-300 hover:bg-accent-blue/10 hover:text-accent-blue dark:hover:bg-white/5 dark:hover:text-white"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  {link.icon}
-                  <span>{link.name}</span>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted transition-colors duration-300 group-hover:bg-accent-blue/20 dark:bg-card dark:group-hover:bg-white/10">
+                    {link.icon}
+                  </span>
+                  <span className="tracking-wide">{link.name}</span>
                 </Link>
               ))}
               {isAuthenticated && (

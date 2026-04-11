@@ -38,13 +38,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-            <Navbar />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <Navbar />
+          <main className="flex-grow w-[98%] lg:w-[95%] max-w-7xl mx-auto flex flex-col">
+            {children}
+          </main>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>

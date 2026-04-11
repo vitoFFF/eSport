@@ -21,7 +21,7 @@ const TournamentCard = ({ game, title, prizePool, participants, date, status, im
   return (
     <motion.div
       whileHover={{ y: -10 }}
-      className="group relative flex-shrink-0 w-[320px] rounded-3xl overflow-hidden glass border border-border/50 hover:border-accent-blue/50 transition-all duration-300 shadow-xl"
+      className="group relative flex-shrink-0 w-[85vw] max-w-[320px] rounded-3xl overflow-hidden glass border border-border/50 hover:border-accent-blue/50 transition-all duration-300 shadow-xl"
     >
       {/* Background Image with Overlay */}
       <div className="relative h-44 overflow-hidden bg-gradient-to-br from-muted/50 to-muted dark:from-muted dark:to-background">

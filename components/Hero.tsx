@@ -16,35 +16,36 @@ const Hero = () => {
       {/* Grid Pattern */}
       <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none -z-[5]" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full">
-        <motion.div
-          initial={{ opacity: 0, x: -50 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="space-y-6 pt-12"
-        >
-
-
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight leading-[1.05] text-foreground">
-            ELEVATE YOUR <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue to-accent-purple">GAME</span>. <br />
-            DOMINATE THE ARENA.
-          </h1>
-
-          <p className="text-lg md:text-xl font-medium text-muted-foreground max-w-xl leading-relaxed">
-            The ultimate platform for competitive players. Weekly tournaments, and massive prize pools await.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4">
-            <button className="group flex items-center justify-center space-x-2 px-8 py-4 rounded-full bg-accent-blue text-white font-bold text-lg glow-blue hover:bg-blue-600 transition-all active:scale-95">
-              <Trophy size={22} />
-              <span>Find a Tournament</span>
-              <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button className="flex items-center justify-center space-x-2 px-8 py-4 rounded-full glass text-white font-bold text-lg hover:bg-white/10 transition-all active:scale-95">
-              <CreditCard size={22} />
-              <span>Create Player Card</span>
-            </button>
-          </div>
+      <div className="container mx-auto px-6 z-10 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full">
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="space-y-6 pt-12"
+          >
+  
+  
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-foreground">
+              ELEVATE YOUR <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue to-accent-purple">GAME</span>. <br />
+              DOMINATE THE ARENA.
+            </h1>
+  
+            <p className="text-base sm:text-lg md:text-xl font-medium text-muted-foreground max-w-xl leading-relaxed">
+              The ultimate platform for competitive players. Weekly tournaments, and massive prize pools await.
+            </p>
+  
+            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+              <button className="w-full sm:w-auto group flex items-center justify-center space-x-2 px-8 py-4 rounded-full bg-accent-blue text-white font-bold text-[15px] sm:text-lg glow-blue hover:bg-blue-600 transition-all active:scale-95">
+                <Trophy size={22} />
+                <span>Find a Tournament</span>
+                <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button className="w-full sm:w-auto flex items-center justify-center space-x-2 px-8 py-4 rounded-full glass text-white font-bold text-[15px] sm:text-lg hover:bg-white/10 transition-all active:scale-95">
+                <CreditCard size={22} />
+                <span>Create Player Card</span>
+              </button>
+            </div>
 
           <div className="flex items-center space-x-6 pt-4">
             <div className="flex -space-x-3">
@@ -133,6 +134,7 @@ const Hero = () => {
             </div>
           </motion.div>
         </motion.div>
+        </div>
       </div>
     </section>
   );

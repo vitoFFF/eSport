@@ -61,7 +61,7 @@ const Features = () => {
     <section className="py-24 bg-background/50">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground uppercase">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground uppercase leading-tight">
             Built for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue to-accent-purple">Elite</span>.
           </h2>
           <p className="text-muted-foreground font-medium">
