@@ -9,8 +9,6 @@ const Hero = () => {
     <section className="relative min-h-[90vh] flex items-center pt-24 overflow-x-hidden">
       {/* Background Decorative Elements */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl -z-10">
-        <div className="absolute top-[10%] left-[10%] w-72 h-72 bg-accent-purple/20 blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[20%] right-[10%] w-96 h-96 bg-accent-blue/20 blur-[120px]" />
       </div>
 
       {/* Grid Pattern */}
@@ -26,7 +24,7 @@ const Hero = () => {
           >
   
   
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-foreground">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-foreground text-shadow-3d uppercase">
               ELEVATE YOUR <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue to-accent-purple">GAME</span>. <br />
               DOMINATE THE ARENA.
             </h1>
@@ -36,13 +34,13 @@ const Hero = () => {
             </p>
   
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              <button className="w-full sm:w-auto group flex items-center justify-center space-x-2 px-8 py-4 rounded-full bg-accent-blue text-white font-bold text-[15px] sm:text-lg glow-blue hover:bg-blue-600 transition-all active:scale-95">
+              <button className="w-full sm:w-auto group flex items-center justify-center space-x-2 px-8 py-4 rounded-full bg-accent-blue text-white font-bold text-[15px] sm:text-lg glow-blue hover:bg-blue-700 dark:hover:bg-accent-blue/90 transition-all active:scale-95">
                 <Trophy size={22} />
                 <span>Find a Tournament</span>
                 <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="w-full sm:w-auto flex items-center justify-center space-x-2 px-8 py-4 rounded-full glass text-white font-bold text-[15px] sm:text-lg hover:bg-white/10 transition-all active:scale-95">
-                <CreditCard size={22} />
+              <button className="w-full sm:w-auto group flex items-center justify-center space-x-2 px-8 py-4 rounded-full border-2 border-accent-purple/50 text-accent-purple hover:bg-accent-purple hover:text-white font-bold text-[15px] sm:text-lg transition-all duration-300 shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:shadow-purple-500/40 active:scale-95">
+                <CreditCard size={22} className="group-hover:scale-110 transition-transform" />
                 <span>Create Player Card</span>
               </button>
             </div>
@@ -66,10 +64,10 @@ const Hero = () => {
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.2 }}
-          className="relative hidden md:block overflow-hidden rounded-3xl p-4 max-w-[32rem] ml-auto lg:mr-8 xl:mr-16"
+          className="relative hidden md:block perspective-2000 rounded-3xl p-4 max-w-[32rem] ml-auto lg:mr-8 xl:mr-16"
         >
           {/* Mock UI Element */}
-          <div className="relative z-10 glass rounded-3xl p-6 border border-border/50 shadow-2xl hover:skew-y-0 hover:rotate-0 transition-all duration-700">
+          <div className="relative z-10 luxury-glass rounded-3xl p-6 border border-white/10 shadow-3d hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] transition-all duration-700 group/card transform-gpu hover:rotate-x-2 hover:rotate-y-2 hover:-translate-y-2">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 rounded-full bg-accent-purple flex items-center justify-center glow-purple">

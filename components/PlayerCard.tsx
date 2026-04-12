@@ -73,7 +73,7 @@ const PlayerCard = ({ name, rating, position, team, stats, image, tier }: Player
           rotateY,
           transformStyle: "preserve-3d",
         }}
-        className={`relative w-[280px] h-[392px] sm:w-[300px] sm:h-[420px] rounded-[2rem] p-4 ${glowColors[tier]} transition-shadow duration-500 cursor-pointer overflow-hidden group`}
+        className={`relative w-[280px] h-[392px] sm:w-[300px] sm:h-[420px] rounded-[2.5rem] p-4 ${glowColors[tier]} transition-shadow duration-500 cursor-pointer overflow-hidden group shadow-3d`}
       >
         {/* Card Background Layer */}
         <div className={`absolute inset-0 bg-gradient-to-br ${tierColors[tier]} opacity-90`} />

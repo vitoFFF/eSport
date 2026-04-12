@@ -52,13 +52,11 @@ export async function signIn(formData: FormData) {
     return { error: error.message }
   }
 
-  revalidatePath('/', 'layout')
   redirect('/profile')
 }
 
 export async function signOut() {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  revalidatePath('/', 'layout')
   redirect('/auth')
 }

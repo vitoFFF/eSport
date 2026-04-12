@@ -17,14 +17,6 @@ export default async function DashboardRootPage() {
     .eq("id", user.id)
     .single();
 
-  // Redirect based on role instead of embedding directly
-  // This allows keeping separation of concerns.
-  if (profile?.role === "organizer") {
-    redirect("/dashboard/organizer");
-  } else if (profile?.role === "admin") {
-    redirect("/dashboard/admin");
-  } else {
-    // Default fallback or player dashboard
-    redirect("/dashboard/player");
-  }
+  // The dashboards are now centralized under /profile
+  redirect("/profile");
 }

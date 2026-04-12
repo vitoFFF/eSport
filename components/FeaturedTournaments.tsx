@@ -58,7 +58,11 @@ const mockTournaments = [
   },
 ];
 
-const FeaturedTournaments = () => {
+interface FeaturedTournamentsProps {
+  dbTournaments?: any[];
+}
+
+const FeaturedTournaments = ({ dbTournaments = [] }: FeaturedTournamentsProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
@@ -69,52 +73,73 @@ const FeaturedTournaments = () => {
     }
   };
 
+  const displayTournaments = dbTournaments.length > 0 ? dbTournaments.map(t => ({
+    game: t.category.toUpperCase(),
+    title: t.name,
+    prizePool: t.prize_pool || "TBD",
+    participants: "Open", // Will update dynamically later based on registrations
+    date: new Date(t.created_at).toLocaleDateString(),
+    status: t.status.charAt(0).toUpperCase() + t.status.slice(1) as any,
+    image: t.banner_url || "https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=800",
+    icon: <Target size={20} />,
+    link: `/tournaments/${t.id}`
+  })) : mockTournaments.map(t => ({ ...t, link: '#' }));
+
   return (
-    <section className="py-24 bg-background overflow-hidden">
-      <div className="container mx-auto px-6">
-        <div className="flex items-end justify-between mb-12">
-          <div className="space-y-4">
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight">
-              COMPETE IN THE <span className="text-accent-blue">ARENA</span>.
+    <section className="relative py-32 bg-background overflow-x-clip overflow-y-visible">
+      {/* Background Decorative Element */}
+      <div className="absolute top-1/2 left-0 -translate-y-1/2 text-[20rem] font-black text-foreground/[0.02] select-none pointer-events-none tracking-tighter mix-blend-overlay">
+        ARENA
+      </div>
+      
+      {/* Decorative Glows */}
+
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 space-y-8 md:space-y-0">
+          <div className="space-y-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight uppercase italic">
+              COMPETE IN THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue via-accent-blue-glow to-accent-purple drop-shadow-sm">ARENA</span>.
             </h2>
-            <p className="text-slate-500 font-medium max-w-xl">
-              Join the most competitive tournaments in the world. Win massive prizes and build your legacy.
+            <p className="text-slate-500 font-medium max-w-xl text-lg opacity-80 border-l-2 border-accent-blue/20 pl-6">
+              Step into the spotlight and prove your worth. Join the world's most prestigious tournaments.
             </p>
           </div>
-          
-          <div className="flex space-x-2 hidden md:flex">
-            <button 
+
+          <div className="flex space-x-4">
+            <button
               onClick={() => scroll("left")}
-              className="p-3 rounded-full glass border border-foreground/10 hover:bg-foreground/10 transition-colors"
+              className="group p-4 rounded-2xl glass border border-foreground/5 hover:border-accent-blue/50 hover:bg-accent-blue/5 transition-all duration-300 shadow-xl active:scale-90"
             >
-              <ChevronLeft size={24} />
+              <ChevronLeft size={28} className="group-hover:-translate-x-1 transition-transform cursor-pointer" />
             </button>
-            <button 
+            <button
               onClick={() => scroll("right")}
-              className="p-3 rounded-full glass border border-foreground/10 hover:bg-foreground/10 transition-colors"
+              className="group p-4 rounded-2xl glass border border-foreground/5 hover:border-accent-blue/50 hover:bg-accent-blue/5 transition-all duration-300 shadow-xl active:scale-90"
             >
-              <ChevronRight size={24} />
+              <ChevronRight size={28} className="group-hover:translate-x-1 transition-transform cursor-pointer" />
             </button>
           </div>
         </div>
 
-        <div 
+        <div
           ref={scrollRef}
-          className="flex space-x-6 overflow-x-auto pb-8 snap-x snap-mandatory scrollbar-hide no-scrollbar"
+          className="flex space-x-6 overflow-x-auto overflow-y-visible pb-12 pt-12 -mt-12 snap-x snap-mandatory scrollbar-hide no-scrollbar"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {mockTournaments.map((tournament, idx) => (
+          {displayTournaments.map((tournament: any, idx: number) => (
             <div key={idx} className="snap-center">
               <TournamentCard {...tournament} />
             </div>
           ))}
         </div>
-        
+
         {/* Mobile Swipe Hint */}
-        <div className="md:hidden mt-4 text-center">
-          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold animate-pulse">
-            Swipe to explore →
-          </p>
+        <div className="md:hidden mt-8 flex justify-center">
+          <div className="px-6 py-2 rounded-full glass border border-foreground/5 flex items-center space-x-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+            <span className="w-1 h-1 rounded-full bg-slate-400 animate-pulse" />
+            <span>Swipe to navigate</span>
+            <span className="w-1 h-1 rounded-full bg-slate-400 animate-pulse" />
+          </div>
         </div>
       </div>
     </section>

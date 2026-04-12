@@ -3,11 +3,11 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { signUp, signIn } from '@/actions/auth'
-import { Shield, User, LayoutDashboard, Mail, Lock, UserCircle, Loader2, Trophy } from 'lucide-react'
+import { Shield, User, LayoutDashboard, Mail, Lock, UserCircle, Loader2, Trophy, Users as UsersIcon } from 'lucide-react'
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
-  const [role, setRole] = useState<'player' | 'organizer'>('player')
+  const [role, setRole] = useState<'player' | 'organizer' | 'manager'>('player')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -38,7 +38,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background px-4 py-32 md:px-6 md:py-36">
+    <div className="relative min-h-screen overflow-hidden bg-background px-4 py-32 md:px-6 md:py-36" suppressHydrationWarning>
       <div className="absolute top-1/4 -left-24 h-80 w-80 rounded-full bg-cyan-500/10 blur-[120px] dark:bg-cyan-500/12" />
       <div className="absolute bottom-1/4 -right-24 h-80 w-80 rounded-full bg-blue-500/10 blur-[120px] dark:bg-purple-500/12" />
 
@@ -70,11 +70,10 @@ export default function AuthPage() {
                 setActiveTab('login')
                 setError(null)
               }}
-              className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${
-                activeTab === 'login'
+              className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${activeTab === 'login'
                   ? 'bg-card text-accent-blue shadow-[0_10px_24px_rgba(59,130,246,0.16)] dark:bg-muted-foreground/10'
                   : 'text-muted-foreground hover:bg-card/70 hover:text-foreground'
-              }`}
+                }`}
             >
               Sign In
             </button>
@@ -83,11 +82,10 @@ export default function AuthPage() {
                 setActiveTab('register')
                 setError(null)
               }}
-              className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${
-                activeTab === 'register'
+              className={`flex-1 rounded-xl py-3 text-sm font-semibold transition-all ${activeTab === 'register'
                   ? 'bg-card text-accent-blue shadow-[0_10px_24px_rgba(59,130,246,0.16)] dark:bg-muted-foreground/10'
                   : 'text-muted-foreground hover:bg-card/70 hover:text-foreground'
-              }`}
+                }`}
             >
               Sign Up
             </button>
@@ -119,39 +117,48 @@ export default function AuthPage() {
                 <>
                   <div className="space-y-2">
                     <label className="ml-1 text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-foreground/60">Account Type</label>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-3">
                       <button
                         type="button"
                         onClick={() => setRole('player')}
-                        className={`flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${
-                          role === 'player'
+                        className={`flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all ${role === 'player'
                             ? 'border-cyan-500/50 bg-cyan-500/10 text-cyan-500 shadow-[0_12px_28px_rgba(6,182,212,0.14)]'
                             : 'border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-muted dark:bg-transparent'
-                        }`}
+                          }`}
                       >
-                        <User className="h-6 w-6" />
-                        <span className="text-sm font-semibold">Player</span>
+                        <User className="h-5 w-5" />
+                        <span className="text-[10px] font-bold uppercase tracking-tight">Player</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRole('manager')}
+                        className={`flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all ${role === 'manager'
+                            ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-500 shadow-[0_12px_28px_rgba(16,185,129,0.14)]'
+                            : 'border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-muted dark:bg-transparent'
+                          }`}
+                      >
+                        <UsersIcon className="h-5 w-5" />
+                        <span className="text-[10px] font-bold uppercase tracking-tight">Manager</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => setRole('organizer')}
-                        className={`flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${
-                          role === 'organizer'
+                        className={`flex flex-col items-center gap-2 rounded-2xl border p-3 transition-all ${role === 'organizer'
                             ? 'border-blue-500/50 bg-blue-500/10 text-blue-500 shadow-[0_12px_28px_rgba(59,130,246,0.14)]'
                             : 'border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-muted dark:bg-transparent'
-                        }`}
+                          }`}
                       >
-                        <Shield className="h-6 w-6" />
-                        <span className="text-sm font-semibold">Organizer</span>
+                        <Shield className="h-5 w-5" />
+                        <span className="text-[10px] font-bold uppercase tracking-tight">Organizer</span>
                       </button>
                     </div>
                   </div>
 
                   <InputField
-                    label="Full Name"
+                    label={role === 'player' ? 'Full Name' : role === 'manager' ? 'Team Name' : 'Company Name'}
                     name="fullName"
                     type="text"
-                    placeholder="John Doe"
+                    placeholder={role === 'player' ? "John Doe" : role === 'manager' ? "Team Name" : "Company Name"}
                     icon={<UserCircle className="h-5 w-5" />}
                   />
 
@@ -216,7 +223,7 @@ function InputField({ label, name, type, placeholder, icon }: InputFieldProps) {
   return (
     <div className="space-y-1">
       <label className="ml-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">{label}</label>
-      <div className="group relative">
+      <div className="group relative" suppressHydrationWarning>
         <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-accent-blue">
           {icon}
         </span>
