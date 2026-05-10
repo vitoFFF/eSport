@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Trophy, Plus, Settings, BarChart3, Image as ImageIcon, Layout, FileText, Share2 } from 'lucide-react'
+import Link from 'next/link'
 import { createTournament } from '@/actions/profile'
 
 interface OrganizerDashboardProps {
@@ -13,6 +14,9 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
   const [activeTab, setActiveTab] = useState<'tournaments' | 'create' | 'rankings'>('tournaments')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [participationMode, setParticipationMode] = useState('team')
+  const [bracketStructure, setBracketStructure] = useState('single_elimination')
+  const [maxRosterSize, setMaxRosterSize] = useState(5)
 
   async function handleCreateTournament(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -96,9 +100,11 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                   <button className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center hover:bg-card transition-all">
                     <Settings size={16} />
                   </button>
-                  <button className="px-5 py-2 rounded-xl bg-foreground text-background text-xs font-black uppercase tracking-widest hover:scale-105 transition-all">
-                    Dashboard
-                  </button>
+                  <Link href={`/tournaments/${t.id}`}>
+                    <button className="px-5 py-2 rounded-xl bg-foreground text-background text-xs font-black uppercase tracking-widest hover:scale-105 transition-all">
+                      Dashboard
+                    </button>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -154,18 +160,36 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                 </div>
                 <div className="space-y-2">
                     <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Participation Mode</label>
-                    <select name="participationMode" className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none">
+                    <select 
+                        name="participationMode" 
+                        value={participationMode}
+                        onChange={(e) => setParticipationMode(e.target.value)}
+                        className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none"
+                    >
                         <option value="team">Team (N vs N)</option>
                         <option value="1v1">Individual (1v1)</option>
                     </select>
                 </div>
-                <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Max Roster Size</label>
-                    <input name="maxRosterSize" type="number" defaultValue={5} min={1} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
+                <div className="space-y-2 transition-all duration-300">
+                    <label className={`text-xs font-black uppercase tracking-widest text-muted-foreground ${participationMode === '1v1' ? 'opacity-50' : ''}`}>Max Roster Size</label>
+                    <input 
+                      name="maxRosterSize" 
+                      type="number" 
+                      min={1} 
+                      readOnly={participationMode === '1v1'} 
+                      value={participationMode === '1v1' ? 1 : maxRosterSize} 
+                      onChange={(e) => setMaxRosterSize(parseInt(e.target.value) || 1)}
+                      className={`w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none ${participationMode === '1v1' ? 'opacity-50 cursor-not-allowed' : ''}`} 
+                    />
                 </div>
                 <div className="space-y-2">
                     <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Bracket Structure</label>
-                    <select name="bracketStructure" className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none">
+                    <select 
+                        name="bracketStructure" 
+                        value={bracketStructure}
+                        onChange={(e) => setBracketStructure(e.target.value)}
+                        className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none"
+                    >
                         <option value="single_elimination">Single Elimination</option>
                         <option value="double_elimination">Double Elimination</option>
                         <option value="round_robin">Round Robin</option>
@@ -184,10 +208,24 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                         <option value="manual">Manual Assignment</option>
                     </select>
                 </div>
-                <div className="space-y-2 col-span-2 flex items-center gap-4 mt-6">
-                    <input type="checkbox" name="thirdPlaceMatch" value="true" className="h-5 w-5 rounded-md border-border text-accent-blue focus:ring-accent-blue" />
-                    <label className="text-sm font-bold">Generate Third-Place Consolation Match</label>
+                <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Stage Start Participants</label>
+                    <input name="stageParticipants" type="number" defaultValue={8} min={2} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
                 </div>
+                
+                {bracketStructure === 'custom' && (
+                    <div className="space-y-2 col-span-1 md:col-span-4 transition-all duration-300">
+                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom Structure Details</label>
+                        <input name="customBracketStructure" placeholder="Describe your custom bracket..." className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none focus:ring-2 focus:ring-accent-blue/50" />
+                    </div>
+                )}
+                
+                {['single_elimination', 'double_elimination'].includes(bracketStructure) && (
+                    <div className="space-y-2 col-span-2 flex items-center gap-4 mt-6 transition-all duration-300">
+                        <input type="checkbox" name="thirdPlaceMatch" value="true" className="h-5 w-5 rounded-md border-border text-accent-blue focus:ring-accent-blue" />
+                        <label className="text-sm font-bold">Generate Third-Place Consolation Match</label>
+                    </div>
+                )}
             </div>
 
             <button disabled={loading} className="w-full py-5 rounded-[1.5rem] bg-gradient-to-r from-accent-blue to-accent-purple text-white font-black uppercase tracking-widest hover:scale-[1.01] active:scale-[0.98] transition-all shadow-xl shadow-accent-blue/20">

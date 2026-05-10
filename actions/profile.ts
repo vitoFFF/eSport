@@ -150,10 +150,17 @@ export async function createTournament(formData: FormData) {
   // New MatchPoint specific fields
   const participationMode = formData.get('participationMode') as string || 'team'
   const maxRosterSize = parseInt(formData.get('maxRosterSize') as string || '0')
-  const bracketStructure = formData.get('bracketStructure') as string || 'single_elimination'
+  let bracketStructure = formData.get('bracketStructure') as string || 'single_elimination'
+  if (bracketStructure === 'custom') {
+    const customDetails = formData.get('customBracketStructure') as string
+    if (customDetails) {
+      bracketStructure = `Custom: ${customDetails}`
+    }
+  }
   const seedingMethod = formData.get('seedingMethod') as string || 'random'
   const thirdPlaceMatch = formData.get('thirdPlaceMatch') === 'true'
   const pointPolicy = JSON.parse(formData.get('pointPolicy') as string || '{}')
+  const stageParticipants = parseInt(formData.get('stageParticipants') as string || '8')
 
   const { data, error } = await supabase
     .from('tournaments')
@@ -171,7 +178,10 @@ export async function createTournament(formData: FormData) {
       bracket_structure: bracketStructure,
       seeding_method: seedingMethod,
       third_place_match: thirdPlaceMatch,
-      point_policy: pointPolicy
+      point_policy: pointPolicy,
+      settings: {
+        stage_participants_count: stageParticipants
+      }
     })
     .select()
     .single()
@@ -257,6 +267,33 @@ export async function registerForTournament(formData: FormData) {
   const { error } = await supabase
     .from('tournament_registrations')
     .insert(payload)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/tournaments/${tournamentId}`)
+  return { success: true }
+}
+
+export async function cancelRegistration(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const tournamentId = formData.get('tournamentId') as string
+  const teamId = formData.get('teamId') as string;
+  
+  let query = supabase
+    .from('tournament_registrations')
+    .delete()
+    .eq('tournament_id', tournamentId);
+  
+  if (teamId) {
+    query = query.eq('team_id', teamId);
+  } else {
+    query = query.eq('player_id', user.id);
+  }
+
+  const { error } = await query;
 
   if (error) return { error: error.message }
 

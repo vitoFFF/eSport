@@ -36,7 +36,8 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (!user) {
-    if (!path.startsWith('/auth') && path !== '/') {
+    const isPublicPath = path.startsWith('/auth') || path === '/' || path.startsWith('/tournaments') || path.startsWith('/teams') || path.startsWith('/players');
+    if (!isPublicPath) {
       return NextResponse.redirect(new URL('/auth', request.url))
     }
     return supabaseResponse

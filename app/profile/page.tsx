@@ -19,14 +19,41 @@ export default async function ProfilePage({ searchParams }: { searchParams: { ta
     redirect("/auth");
   }
 
-  const { data: profile } = await supabase
+  let { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", user.id)
     .single();
 
   if (!profile) {
-    return <div>Profile not found. Please contact support.</div>;
+    const meta = user.user_metadata;
+    const { data: newProfile, error: createError } = await supabase
+      .from("profiles")
+      .insert({
+        id: user.id,
+        full_name: meta?.full_name || user.email?.split('@')[0] || "New User",
+        username: meta?.username || `user_${user.id.slice(0, 5)}`,
+        role: meta?.role || 'player',
+      })
+      .select()
+      .single();
+
+    if (createError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <div className="text-center p-8 rounded-[2rem] border border-border bg-card shadow-2xl max-w-md">
+            <h2 className="text-2xl font-black text-red-500 mb-4 uppercase tracking-tight">Access Restricted</h2>
+            <p className="text-muted-foreground font-medium mb-8 leading-relaxed">
+              We couldn't automatically recover your profile after the database reset. This usually happens if your session has expired.
+            </p>
+            <Link href="/auth" className="inline-block w-full py-4 rounded-xl bg-foreground text-background font-black uppercase tracking-widest text-xs hover:scale-[1.02] transition-transform">
+              Return to Login
+            </Link>
+          </div>
+        </div>
+      );
+    }
+    profile = newProfile;
   }
 
   let organization = null;

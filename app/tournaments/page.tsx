@@ -107,7 +107,11 @@ export default async function TournamentsCategoryPage({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {tournaments.length > 0 ? tournaments.map((event: any, idx: number) => (
-              <div key={idx} className="group relative rounded-3xl border border-border/40 bg-card/40 backdrop-blur-md overflow-hidden hover:shadow-2xl hover:border-border transition-all duration-500">
+              <Link 
+                key={idx} 
+                href={`/tournaments/${event.id}`}
+                className="group relative rounded-3xl border border-border/40 bg-card/40 backdrop-blur-md overflow-hidden hover:shadow-2xl hover:border-border transition-all duration-500 block"
+              >
                 <div className="absolute top-4 right-4 z-10">
                   <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${
                     event.status === 'Open' ? 'bg-emerald-500 text-white' :
@@ -145,12 +149,12 @@ export default async function TournamentsCategoryPage({
                       <p className="text-lg font-black text-foreground">{event.prize}</p>
                     </div>
                     
-                    <Link href={`/tournaments/${event.id}`} className={`h-10 w-10 flex items-center justify-center rounded-full bg-foreground text-background group-hover:-rotate-45 transition-transform duration-300`}>
+                    <div className={`h-10 w-10 flex items-center justify-center rounded-full bg-foreground text-background group-hover:-rotate-45 transition-transform duration-300`}>
                       <ChevronRight size={20} />
-                    </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             )) : (
               <div className="col-span-full py-20 text-center rounded-3xl border border-dashed border-border bg-muted/20">
                 <Trophy className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
