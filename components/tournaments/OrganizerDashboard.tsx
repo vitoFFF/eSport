@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Trophy, Plus, Settings, BarChart3, Image as ImageIcon, Layout, FileText, Share2 } from 'lucide-react'
+import { Trophy, Plus, Settings, BarChart3, Image as ImageIcon, Layout, FileText, Share2, Gamepad2, Trophy as TrophyIcon, Users, User, GitFork, Shuffle, TrendingUp, Edit3, Upload, Sparkles, Wand2 } from 'lucide-react'
 import Link from 'next/link'
 import { createTournament } from '@/actions/profile'
+import ModernSelect from '@/components/ui/ModernSelect'
 
 interface OrganizerDashboardProps {
   profile: any
@@ -16,15 +17,21 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [participationMode, setParticipationMode] = useState('team')
   const [bracketStructure, setBracketStructure] = useState('single_elimination')
+  const [category, setCategory] = useState('esport')
+  const [seedingMethod, setSeedingMethod] = useState('random')
+  const [rankingYear, setRankingYear] = useState('2026')
   const [maxRosterSize, setMaxRosterSize] = useState(5)
+  const [selectedBanner, setSelectedBanner] = useState<string | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   async function handleCreateTournament(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setLoading(true)
     const formData = new FormData(e.currentTarget)
-    // Add default empty point policy
+    // Add default empty point policy and banner
     formData.append('pointPolicy', JSON.stringify({ "1st": 500, "2nd": 200 }))
-    
+    if (selectedBanner) formData.append('bannerUrl', selectedBanner)
+
     const result = await createTournament(formData)
     if (result.error) setMessage({ type: 'error', text: result.error })
     else {
@@ -34,6 +41,33 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
     setLoading(false)
   }
 
+  const exampleImages = [
+    { id: 'esport', url: '/images/examples/esport.png', label: 'eSport' },
+    { id: 'football', url: '/images/examples/football.png', label: 'Football' },
+    { id: 'tennis', url: '/images/examples/tennis.png', label: 'Tennis' },
+  ]
+
+  const handleAiGenerate = () => {
+    setIsGenerating(true)
+    // Simulate AI Generation
+    setTimeout(() => {
+      const match = exampleImages.find(img => img.id === category) || exampleImages[0]
+      setSelectedBanner(match.url)
+      setIsGenerating(false)
+    }, 2000)
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSelectedBanner(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -41,21 +75,21 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
           <h2 className="text-3xl font-black text-foreground">Organizer Hub</h2>
           <p className="text-muted-foreground font-medium">Manage your circuit and community.</p>
         </div>
-        
+
         <div className="flex items-center gap-2 p-1 bg-muted rounded-2xl border border-border">
-          <button 
+          <button
             onClick={() => setActiveTab('tournaments')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'tournaments' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
           >
             My Events
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('create')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'create' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
           >
             Create New
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('rankings')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'rankings' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
           >
@@ -70,14 +104,14 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
             <div key={t.id} className="group relative overflow-hidden rounded-[2rem] border border-border bg-card hover:border-accent-blue/50 transition-all duration-300 shadow-lg hover:shadow-accent-blue/5">
               <div className="aspect-[21/9] bg-muted relative">
                 {t.banner_url ? (
-                  <img src={t.banner_url} alt={t.name} className="w-full h-full object-cover opacity-60" />
+                  <img src={t.banner_url} alt={t.name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900 opacity-80">
                     <Trophy className="text-slate-700 h-10 w-10" />
                   </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 to-transparent" />
-                <div className="absolute bottom-4 left-6">
+                
+                <div className="absolute bottom-4 left-6 z-10">
                   <span className="text-[10px] font-black uppercase tracking-widest text-accent-blue bg-accent-blue/10 px-2 py-1 rounded-md mb-2 inline-block">
                     {t.status}
                   </span>
@@ -112,7 +146,7 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
             <div className="col-span-full py-20 text-center rounded-[2rem] border border-dashed border-border flex flex-col items-center justify-center">
               <Trophy className="h-12 w-12 text-muted-foreground/30 mb-4" />
               <p className="text-muted-foreground font-medium mb-6 italic text-sm">You haven't hosted any tournaments yet.</p>
-              <button 
+              <button
                 onClick={() => setActiveTab('create')}
                 className="px-8 py-4 rounded-2xl bg-foreground text-background font-black uppercase tracking-widest text-sm hover:scale-105 transition-all shadow-xl shadow-black/10"
               >
@@ -129,7 +163,7 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
             <Plus className="text-accent-blue" />
             Tournament Configuration
           </h3>
-          
+
           <form onSubmit={handleCreateTournament} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
@@ -144,88 +178,159 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
 
             <div className="space-y-2">
               <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Description & Lore</label>
-              <textarea name="description" placeholder="Tell players why this tournament is legendary..." className="w-full min-h-[120px] rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+              <textarea name="description" placeholder="Tell players why this tournament is legendary..." className="w-full min-h-[80px] rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
             </div>
 
             {/* MatchPoint Configs */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 p-6 rounded-3xl border border-border bg-accent-blue/5">
-                <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Sport Category</label>
-                    <select name="category" required className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none">
-                        <option value="esport">eSport</option>
-                        <option value="football">Football</option>
-                        <option value="tennis">Tennis</option>
-                        <option value="padel">Padel</option>
-                    </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-6 rounded-3xl border border-border bg-accent-blue/5">
+              <ModernSelect
+                label="Sport Category"
+                name="category"
+                value={category}
+                onChange={setCategory}
+                options={[
+                  { value: 'esport', label: 'eSport', emoji: '🎮' },
+                  { value: 'football', label: 'Football', emoji: '⚽' },
+                  { value: 'tennis', label: 'Tennis', emoji: '🎾' },
+                  { value: 'padel', label: 'Padel', emoji: '🏸' },
+                ]}
+              />
+              <ModernSelect
+                label="Participation Mode"
+                name="participationMode"
+                value={participationMode}
+                onChange={setParticipationMode}
+                options={[
+                  { value: 'team', label: 'Team (N vs N)', emoji: '👥' },
+                  { value: '1v1', label: 'Individual (1v1)', emoji: '👤' },
+                ]}
+              />
+              <div className="space-y-2 transition-all duration-300">
+                <label className={`text-xs font-black uppercase tracking-widest text-muted-foreground ${participationMode === '1v1' ? 'opacity-50' : ''}`}>Max Roster Size</label>
+                <input
+                  name="maxRosterSize"
+                  type="number"
+                  min={1}
+                  readOnly={participationMode === '1v1'}
+                  value={participationMode === '1v1' ? 1 : maxRosterSize}
+                  onChange={(e) => setMaxRosterSize(parseInt(e.target.value) || 1)}
+                  className={`w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none ${participationMode === '1v1' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                />
+              </div>
+              <ModernSelect
+                label="Bracket Structure"
+                name="bracketStructure"
+                value={bracketStructure}
+                onChange={setBracketStructure}
+                options={[
+                  { value: 'single_elimination', label: 'Single Elimination', emoji: '🏆' },
+                  { value: 'double_elimination', label: 'Double Elimination', emoji: '🥈' },
+                  { value: 'round_robin', label: 'Round Robin', emoji: '🔄' },
+                  { value: 'swiss_system', label: 'Swiss System', emoji: '🇨🇭' },
+                  { value: 'league', label: 'League', emoji: '📊' },
+                  { value: 'gauntlet', label: 'Gauntlet', emoji: '⚔️' },
+                  { value: 'bracket_groups', label: 'Bracket Groups', emoji: '👥' },
+                  { value: 'custom', label: 'Custom', emoji: '⚙️' },
+                ]}
+              />
+              <ModernSelect
+                label="Seeding Method"
+                name="seedingMethod"
+                value={seedingMethod}
+                onChange={setSeedingMethod}
+                options={[
+                  { value: 'random', label: 'Random Shuffling', emoji: '🎲' },
+                  { value: 'rank', label: 'Rank-based', emoji: '📈' },
+                  { value: 'manual', label: 'Manual Assignment', emoji: '✍️' },
+                ]}
+              />
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Participants</label>
+                <input name="stageParticipants" type="number" defaultValue={8} min={2} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
+              </div>
+
+              {bracketStructure === 'custom' && (
+                <div className="space-y-2 col-span-1 md:col-span-4 transition-all duration-300">
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom Structure Details</label>
+                  <input name="customBracketStructure" placeholder="Describe your custom bracket..." className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none focus:ring-2 focus:ring-accent-blue/50" />
                 </div>
-                <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Participation Mode</label>
-                    <select 
-                        name="participationMode" 
-                        value={participationMode}
-                        onChange={(e) => setParticipationMode(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none"
-                    >
-                        <option value="team">Team (N vs N)</option>
-                        <option value="1v1">Individual (1v1)</option>
-                    </select>
+              )}
+
+              {['single_elimination', 'double_elimination'].includes(bracketStructure) && (
+                <div className="space-y-2 col-span-2 flex items-center gap-4 mt-6 transition-all duration-300">
+                  <input type="checkbox" name="thirdPlaceMatch" value="true" className="h-5 w-5 rounded-md border-border text-accent-blue focus:ring-accent-blue" />
+                  <label className="text-sm font-bold">Generate Third-Place Consolation Match</label>
                 </div>
-                <div className="space-y-2 transition-all duration-300">
-                    <label className={`text-xs font-black uppercase tracking-widest text-muted-foreground ${participationMode === '1v1' ? 'opacity-50' : ''}`}>Max Roster Size</label>
-                    <input 
-                      name="maxRosterSize" 
-                      type="number" 
-                      min={1} 
-                      readOnly={participationMode === '1v1'} 
-                      value={participationMode === '1v1' ? 1 : maxRosterSize} 
-                      onChange={(e) => setMaxRosterSize(parseInt(e.target.value) || 1)}
-                      className={`w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none ${participationMode === '1v1' ? 'opacity-50 cursor-not-allowed' : ''}`} 
-                    />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Bracket Structure</label>
-                    <select 
-                        name="bracketStructure" 
-                        value={bracketStructure}
-                        onChange={(e) => setBracketStructure(e.target.value)}
-                        className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none"
-                    >
-                        <option value="single_elimination">Single Elimination</option>
-                        <option value="double_elimination">Double Elimination</option>
-                        <option value="round_robin">Round Robin</option>
-                        <option value="swiss_system">Swiss System</option>
-                        <option value="league">League</option>
-                        <option value="gauntlet">Gauntlet</option>
-                        <option value="bracket_groups">Bracket Groups</option>
-                        <option value="custom">Custom</option>
-                    </select>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Seeding Method</label>
-                    <select name="seedingMethod" className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none">
-                        <option value="random">Random Shuffling</option>
-                        <option value="rank">Rank-based</option>
-                        <option value="manual">Manual Assignment</option>
-                    </select>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Stage Start Participants</label>
-                    <input name="stageParticipants" type="number" defaultValue={8} min={2} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
-                </div>
-                
-                {bracketStructure === 'custom' && (
-                    <div className="space-y-2 col-span-1 md:col-span-4 transition-all duration-300">
-                        <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom Structure Details</label>
-                        <input name="customBracketStructure" placeholder="Describe your custom bracket..." className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none focus:ring-2 focus:ring-accent-blue/50" />
+              )}
+            </div>
+
+            {/* Banner Selection */}
+            <div className="space-y-4">
+              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Tournament Banner</label>
+              
+              <div className="relative group aspect-[21/9] w-full rounded-[2rem] overflow-hidden border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center transition-all hover:border-accent-blue/50">
+                {selectedBanner ? (
+                  <>
+                    <img src={selectedBanner} alt="Preview" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                       <button type="button" onClick={() => setSelectedBanner(null)} className="px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl text-white text-xs font-bold hover:bg-white/20 transition-all">Change Image</button>
                     </div>
-                )}
-                
-                {['single_elimination', 'double_elimination'].includes(bracketStructure) && (
-                    <div className="space-y-2 col-span-2 flex items-center gap-4 mt-6 transition-all duration-300">
-                        <input type="checkbox" name="thirdPlaceMatch" value="true" className="h-5 w-5 rounded-md border-border text-accent-blue focus:ring-accent-blue" />
-                        <label className="text-sm font-bold">Generate Third-Place Consolation Match</label>
+                  </>
+                ) : (
+                  <div className="text-center p-8">
+                    <div className="h-12 w-12 rounded-2xl bg-accent-blue/10 flex items-center justify-center mx-auto mb-4">
+                      <ImageIcon className="text-accent-blue" size={24} />
                     </div>
+                    <p className="text-sm font-bold text-foreground">Select a banner for your event</p>
+                    <p className="text-xs text-muted-foreground mt-1">Upload, choose an example, or generate with AI</p>
+                  </div>
                 )}
+                {isGenerating && (
+                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-20">
+                    <div className="relative h-16 w-16 mb-4">
+                      <div className="absolute inset-0 border-4 border-accent-blue/20 rounded-full"></div>
+                      <div className="absolute inset-0 border-4 border-accent-blue border-t-transparent rounded-full animate-spin"></div>
+                      <Sparkles className="absolute inset-0 m-auto text-accent-blue animate-pulse" size={24} />
+                    </div>
+                    <p className="text-sm font-black uppercase tracking-widest text-accent-blue animate-pulse">Dreaming up your banner...</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-card border border-border cursor-pointer hover:border-accent-blue/50 transition-all group">
+                  <Upload size={16} className="text-muted-foreground group-hover:text-accent-blue transition-colors" />
+                  <span className="text-xs font-bold">Upload Custom</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                </label>
+
+                <div className="h-8 w-px bg-border mx-2" />
+
+                <div className="flex items-center gap-2">
+                  {exampleImages.map((img) => (
+                    <button
+                      key={img.id}
+                      type="button"
+                      onClick={() => setSelectedBanner(img.url)}
+                      className={`h-10 w-16 rounded-lg overflow-hidden border-2 transition-all hover:scale-105 ${selectedBanner === img.url ? 'border-accent-blue' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                    >
+                      <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex-grow" />
+
+                <button
+                  type="button"
+                  disabled={isGenerating}
+                  onClick={handleAiGenerate}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-accent-blue/10 to-accent-purple/10 border border-accent-blue/20 text-accent-blue hover:from-accent-blue/20 hover:to-accent-purple/20 transition-all group shadow-sm"
+                >
+                  <Wand2 size={16} className="group-hover:rotate-12 transition-transform" />
+                  <span className="text-xs font-black uppercase tracking-widest">AI Generate Banner</span>
+                </button>
+              </div>
             </div>
 
             <button disabled={loading} className="w-full py-5 rounded-[1.5rem] bg-gradient-to-r from-accent-blue to-accent-purple text-white font-black uppercase tracking-widest hover:scale-[1.01] active:scale-[0.98] transition-all shadow-xl shadow-accent-blue/20">
@@ -242,15 +347,20 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
           <h3 className="text-2xl font-black text-foreground mb-4">Ecosystem Rankings</h3>
           <p className="text-muted-foreground max-w-md mx-auto mb-8">Publish cross-tournament leaderboards. Filter by year and category to show who rules the arena.</p>
           <div className="flex flex-wrap justify-center gap-4">
-             <div className="w-full max-w-xs space-y-2 text-left">
-                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Filter by Year</label>
-                <select className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none">
-                  {[2026, 2025, 2024].map(y => <option key={y}>{y}</option>)}
-                </select>
-             </div>
-             <button className="h-12 mt-6 px-10 rounded-xl bg-foreground text-background font-black uppercase tracking-widest text-xs hover:scale-105 transition-all">
-                Generate View
-             </button>
+              <ModernSelect
+                label="Filter by Year"
+                name="rankingYear"
+                value={rankingYear}
+                onChange={setRankingYear}
+                options={[
+                  { value: '2026', label: '2026', emoji: '📅' },
+                  { value: '2025', label: '2025', emoji: '📅' },
+                  { value: '2024', label: '2024', emoji: '📅' },
+                ]}
+              />
+            <button className="h-12 mt-6 px-10 rounded-xl bg-foreground text-background font-black uppercase tracking-widest text-xs hover:scale-105 transition-all">
+              Generate View
+            </button>
           </div>
         </div>
       )}

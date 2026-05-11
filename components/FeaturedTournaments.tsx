@@ -86,7 +86,7 @@ const FeaturedTournaments = ({ dbTournaments = [] }: FeaturedTournamentsProps) =
   })) : mockTournaments.map(t => ({ ...t, link: '#' }));
 
   return (
-    <section className="relative py-32 bg-background overflow-x-clip overflow-y-visible">
+    <section className="relative py-16 bg-background overflow-x-clip overflow-y-visible">
       {/* Background Decorative Element */}
       <div className="absolute top-1/2 left-0 -translate-y-1/2 text-[20rem] font-black text-foreground/[0.02] select-none pointer-events-none tracking-tighter mix-blend-overlay">
         ARENA

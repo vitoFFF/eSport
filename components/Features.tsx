@@ -58,7 +58,7 @@ const Features = () => {
   ];
 
   return (
-    <section className="py-24 bg-background/50">
+    <section className="py-16 bg-background/50">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground uppercase leading-tight">

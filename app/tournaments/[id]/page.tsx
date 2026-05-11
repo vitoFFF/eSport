@@ -114,7 +114,6 @@ export default async function TournamentDetailsPage({
              <Trophy className="text-slate-700 h-24 w-24" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
         
         <div className="absolute top-32 left-6 z-20">
           <Link href="/tournaments" className="flex items-center space-x-2 text-white hover:text-accent-blue transition-colors group">
