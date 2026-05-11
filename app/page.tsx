@@ -17,9 +17,9 @@ export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <Hero />
-      
+
       <FeaturedTournaments dbTournaments={dbTournaments || []} />
-      
+
       {/* Featured Athletes Section */}
       <section className="relative py-16 bg-background overflow-hidden">
         {/* Large background decorative text */}
@@ -70,7 +70,7 @@ export default async function Home() {
             <div className="relative flex-shrink-0 w-full md:w-[600px] h-[500px] flex items-center justify-center">
               {/* Bronze Card (Back Left) */}
               <div className="absolute left-0 top-1/2 -translate-y-1/2 -rotate-12 scale-90 opacity-40 hover:opacity-100 hover:scale-100 hover:z-50 transition-all duration-500 z-10">
-                <PlayerCard 
+                <PlayerCard
                   name="NOVA_REACH"
                   rating={78}
                   position="Support"
@@ -87,7 +87,7 @@ export default async function Home() {
 
               {/* Silver Card (Back Right) */}
               <div className="absolute right-0 top-1/2 -translate-y-1/2 rotate-12 scale-90 opacity-40 hover:opacity-100 hover:scale-100 hover:z-50 transition-all duration-500 z-20">
-                <PlayerCard 
+                <PlayerCard
                   name="VORTEX_XP"
                   rating={86}
                   position="Lurker"
@@ -104,7 +104,7 @@ export default async function Home() {
 
               {/* Gold Card (Center Front) */}
               <div className="relative z-30 transform hover:scale-105 transition-all duration-500">
-                <PlayerCard 
+                <PlayerCard
                   name="KAIROS_ONE"
                   rating={96}
                   position="Entry Fragger"
@@ -117,7 +117,7 @@ export default async function Home() {
                   image="/images/players/gold.png"
                   tier="Gold"
                 />
-                
+
                 {/* Floating Rank Tag */}
                 <div className="absolute -bottom-4 -right-12 luxury-glass p-5 rounded-2xl border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-40">
                   <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Global Rank</p>
@@ -135,7 +135,7 @@ export default async function Home() {
       </section>
 
       <Features />
-      
+
       {/* Visual CTA Section */}
       <section className="py-16 relative overflow-hidden">
         <div className="absolute inset-0 bg-accent-blue/5 -z-10" />
