@@ -64,13 +64,13 @@ export default function BracketView({
     if (matches && matches.length > 0) {
       return matches.map(m => ({
         ...m,
-        home_team: m.home_team || (m.home_player ? { 
-          name: m.home_player.username || m.home_player.full_name, 
-          avatar_url: m.home_player.avatar_url 
+        home_team: m.home_team || (m.home_player ? {
+          name: m.home_player.username || m.home_player.full_name,
+          avatar_url: m.home_player.avatar_url
         } : null),
-        away_team: m.away_team || (m.away_player ? { 
-          name: m.away_player.username || m.away_player.full_name, 
-          avatar_url: m.away_player.avatar_url 
+        away_team: m.away_team || (m.away_player ? {
+          name: m.away_player.username || m.away_player.full_name,
+          avatar_url: m.away_player.avatar_url
         } : null)
       }))
     }
@@ -78,14 +78,72 @@ export default function BracketView({
     const skeleton: any[] = []
     const participantsCount = Number(totalParticipants) || 8
 
-    if (['single_elimination', 'double_elimination', 'swiss_system'].includes(bracketStructure)) {
+    if (bracketStructure === 'double_elimination') {
+      const rounds = Math.ceil(Math.log2(participantsCount))
+
+      // 1. Winners Bracket Skeleton
+      for (let r = 0; r < rounds; r++) {
+        const matchesInRound = Math.pow(2, rounds - r - 1)
+        for (let m = 0; m < matchesInRound; m++) {
+          const homeParticipant = r === 0 ? normalizedParticipants[m * 2] : null
+          const awayParticipant = r === 0 ? normalizedParticipants[m * 2 + 1] : null
+          skeleton.push({
+            id: `skeleton-winners-${r}-${m}`,
+            bracket_round: r,
+            match_order: m,
+            status: 'pending',
+            home_team: homeParticipant,
+            away_team: awayParticipant,
+            details: { bracket: 'winners' }
+          })
+        }
+      }
+
+      // 2. Losers Bracket Skeleton
+      let lbRoundCount = (rounds - 1) * 2
+      for (let r = 0; r < lbRoundCount; r++) {
+        const wbRoundEq = Math.floor(r / 2)
+        const matchesInRound = Math.pow(2, rounds - wbRoundEq - 2)
+        for (let m = 0; m < matchesInRound; m++) {
+          skeleton.push({
+            id: `skeleton-losers-${r}-${m}`,
+            bracket_round: 10 + r,
+            match_order: m,
+            status: 'pending',
+            details: {
+              bracket: 'losers',
+              phase: r % 2 === 0 ? 'survival' : 'drop-in'
+            }
+          })
+        }
+      }
+
+      // 3. Grand Finals
+      skeleton.push({
+        id: `skeleton-gf`,
+        bracket_round: 20,
+        match_order: 0,
+        status: 'pending',
+        details: { bracket: 'grand_finals' }
+      })
+      skeleton.push({
+        id: `skeleton-gf-reset`,
+        bracket_round: 21,
+        match_order: 0,
+        status: 'pending',
+        details: { bracket: 'grand_finals_reset' }
+      })
+
+      return skeleton
+    }
+
+    if (['single_elimination', 'swiss_system'].includes(bracketStructure)) {
       let currentRoundParticipants = participantsCount
       let roundIdx = 0
 
       while (currentRoundParticipants > 1) {
         const matchesInRound = Math.floor(currentRoundParticipants / 2)
         for (let i = 0; i < matchesInRound; i++) {
-          // Only populate names for the very first round
           const homeParticipant = roundIdx === 0 ? normalizedParticipants[i * 2] : null
           const awayParticipant = roundIdx === 0 ? normalizedParticipants[i * 2 + 1] : null
 
@@ -240,53 +298,120 @@ export default function BracketView({
     </div>
   )
 
-  const renderDoubleElimination = () => (
-    <div className="space-y-16">
-      <div>
-        <h3 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-8 flex items-center gap-2">
-          <Trophy size={16} /> Winners Bracket
-        </h3>
-        <div className="flex gap-12 min-w-max transition-all duration-700">
-          {sortedRoundIds.map((roundId, roundIdx) => (
-            <div key={`winners-${roundId}`} className="flex flex-col space-y-8 w-64">
-              <div className="text-center pb-4">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 bg-emerald-500/10 px-4 py-1 rounded-full inline-block">
-                  {getRoundName(roundIdx, totalRounds)}
-                </h4>
-              </div>
-              <div className="flex flex-col justify-around flex-grow space-y-8">
-                {roundsMap[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, matchIdx: number) =>
-                  renderMatchCard({ ...match, id: `win-${match.id}` }, matchIdx, roundIdx, true)
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+  const renderDoubleElimination = () => {
+    const winnersMatches = displayMatches.filter(m => m.details?.bracket === 'winners' || m.bracket_round < 10)
+    const losersMatches = displayMatches.filter(m => m.details?.bracket === 'losers' || (m.bracket_round >= 10 && m.bracket_round < 20))
+    const gfMatches = displayMatches.filter(m => m.details?.bracket?.startsWith('grand_finals') || m.bracket_round >= 20)
 
-      <div className="pt-8 border-t border-border border-dashed">
-        <h3 className="text-sm font-black uppercase tracking-widest text-red-500 mb-8 flex items-center gap-2">
-          <Trophy size={16} className="opacity-50" /> Losers Bracket
-        </h3>
-        <div className="flex gap-12 min-w-max transition-all duration-700">
-          {sortedRoundIds.slice(0, Math.max(1, totalRounds - 1)).map((roundId, roundIdx) => (
-            <div key={`losers-${roundId}`} className="flex flex-col space-y-8 w-64">
-              <div className="text-center pb-4">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 bg-red-500/10 px-4 py-1 rounded-full inline-block">
-                  Losers R{roundIdx + 1}
-                </h4>
-              </div>
-              <div className="flex flex-col justify-around flex-grow space-y-8">
-                {roundsMap[roundId].slice(0, Math.max(1, Math.floor(roundsMap[roundId].length / 2))).map((match: any, matchIdx: number) =>
-                  renderMatchCard({ ...match, id: `los-${match.id}` }, matchIdx, roundIdx, true)
-                )}
-              </div>
+    const winnersRounds = winnersMatches.reduce((acc, m) => {
+      if (!acc[m.bracket_round]) acc[m.bracket_round] = []
+      acc[m.bracket_round].push(m)
+      return acc
+    }, {} as any)
+
+    const losersRounds = losersMatches.reduce((acc, m) => {
+      if (!acc[m.bracket_round]) acc[m.bracket_round] = []
+      acc[m.bracket_round].push(m)
+      return acc
+    }, {} as any)
+
+    const sortedWinnersIds = Object.keys(winnersRounds).map(Number).sort((a, b) => a - b)
+    const sortedLosersIds = Object.keys(losersRounds).map(Number).sort((a, b) => a - b)
+
+    return (
+      <div className="space-y-24">
+        {/* Winners Bracket */}
+        <section>
+          <div className="flex items-center gap-4 mb-10">
+            <div className="h-10 w-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
+              <Trophy size={20} className="text-emerald-500" />
             </div>
-          ))}
-        </div>
+            <div>
+              <h3 className="text-lg font-black uppercase tracking-tight text-emerald-500">Winners Bracket</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Undefeated Progression</p>
+            </div>
+          </div>
+          <div className="flex gap-12 min-w-max pb-4">
+            {sortedWinnersIds.map((roundId, idx) => (
+              <div key={roundId} className="flex flex-col space-y-8 w-72">
+                <div className="text-center">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 bg-emerald-500/10 px-4 py-1 rounded-full inline-block">
+                    {getRoundName(idx, sortedWinnersIds.length)}
+                  </h4>
+                </div>
+                <div className="flex flex-col justify-around flex-grow space-y-12">
+                  {winnersRounds[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, mIdx: number) =>
+                    renderMatchCard(match, mIdx, idx, true)
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Losers Bracket */}
+        <section className="pt-12 border-t border-border/50 border-dashed">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="h-10 w-10 rounded-2xl bg-red-500/10 flex items-center justify-center">
+              <X size={20} className="text-red-500" />
+            </div>
+            <div>
+              <h3 className="text-lg font-black uppercase tracking-tight text-red-500">Losers Bracket</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">One Loss Recovery</p>
+            </div>
+          </div>
+          <div className="flex gap-12 min-w-max pb-4">
+            {sortedLosersIds.map((roundId, idx) => {
+              const phase = losersRounds[roundId][0]?.details?.phase || (idx % 2 === 0 ? 'survival' : 'drop-in')
+              return (
+                <div key={roundId} className="flex flex-col space-y-8 w-72">
+                  <div className="text-center space-y-2">
+                    <h4 className={`text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1 rounded-full inline-block ${phase === 'survival' ? 'text-amber-500 bg-amber-500/10' : 'text-red-500 bg-red-500/10'}`}>
+                      {phase === 'survival' ? 'Phase A: Survival' : 'Phase B: Drop-in'}
+                    </h4>
+                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Losers Round {idx + 1}</p>
+                  </div>
+                  <div className="flex flex-col justify-around flex-grow space-y-8">
+                    {losersRounds[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, mIdx: number) =>
+                      renderMatchCard(match, mIdx, idx, true)
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        {/* Grand Finals */}
+        <section className="pt-12 border-t border-border/50 border-dashed">
+          <div className="flex items-center justify-center flex-col gap-4 mb-12">
+            <div className="h-16 w-16 rounded-3xl bg-accent-blue/10 flex items-center justify-center">
+              <Trophy size={32} className="text-accent-blue animate-pulse" />
+            </div>
+            <div className="text-center">
+              <h3 className="text-2xl font-black uppercase tracking-tighter text-accent-blue">Grand Finals</h3>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground max-w-[200px] mt-1 mx-auto">Winners Champion vs Losers Champion</p>
+            </div>
+          </div>
+          <div className="flex justify-center items-center gap-16">
+            {gfMatches.sort((a, b) => a.bracket_round - b.bracket_round).map((match, idx) => (
+              <div key={match.id} className="w-80">
+                <div className="text-center mb-6">
+                  <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-purple bg-accent-purple/10 px-6 py-2 rounded-full inline-block border border-accent-purple/20">
+                    {idx === 0 ? 'Championship Match' : 'Grand Final Reset'}
+                  </h4>
+                  {idx === 1 && (
+                    <p className="text-[9px] font-bold text-red-500 uppercase tracking-widest mt-2 animate-bounce">If Losers Champion Wins</p>
+                  )}
+                </div>
+                {renderMatchCard(match, idx, 0, false)}
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
-    </div>
-  )
+    )
+  }
 
   const renderRoundRobin = () => {
     // Use normalized participants or fallback to dummy
