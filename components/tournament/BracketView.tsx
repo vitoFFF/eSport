@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Trophy, Edit3, X, Check, Loader2, Sparkles } from 'lucide-react'
+import { Users, Trophy, Edit3, X, Check, Loader2, Sparkles, LayoutGrid } from 'lucide-react'
 import { updateMatchScore, generateBracketMatches } from '@/actions/matches'
 
 interface Match {
@@ -24,6 +24,7 @@ interface BracketViewProps {
   totalParticipants?: number
   isOrganizer?: boolean
   tournamentId?: string
+  bracketStructure?: string
 }
 
 const getRoundName = (roundIdx: number, totalRounds: number) => {
@@ -34,37 +35,40 @@ const getRoundName = (roundIdx: number, totalRounds: number) => {
   return `Round ${roundIdx + 1}`
 }
 
-export default function BracketView({ matches, totalParticipants = 8, isOrganizer = false, tournamentId }: BracketViewProps) {
+export default function BracketView({ matches, totalParticipants = 8, isOrganizer = false, tournamentId, bracketStructure = 'single_elimination' }: BracketViewProps) {
   const [selectedMatch, setSelectedMatch] = useState<any | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [editScores, setEditScores] = useState({ home: 0, away: 0 })
 
-  // If no matches, generate a skeleton structure
+  // Skeleton generation based on structure
   const displayMatches = React.useMemo(() => {
     if (matches && matches.length > 0) return matches
 
     const skeleton: any[] = []
-    let currentRoundParticipants = totalParticipants
-    let roundIdx = 0
-    
-    while (currentRoundParticipants > 1) {
-      const matchesInRound = Math.floor(currentRoundParticipants / 2)
-      for (let i = 0; i < matchesInRound; i++) {
-        skeleton.push({
-          id: `skeleton-${roundIdx}-${i}`,
-          bracket_round: roundIdx,
-          match_order: i,
-          status: 'pending'
-        })
+
+    if (['single_elimination', 'double_elimination', 'swiss_system'].includes(bracketStructure)) {
+      let currentRoundParticipants = totalParticipants
+      let roundIdx = 0
+
+      while (currentRoundParticipants > 1) {
+        const matchesInRound = Math.floor(currentRoundParticipants / 2)
+        for (let i = 0; i < matchesInRound; i++) {
+          skeleton.push({
+            id: `skeleton-${roundIdx}-${i}`,
+            bracket_round: roundIdx,
+            match_order: i,
+            status: 'pending'
+          })
+        }
+        currentRoundParticipants = matchesInRound
+        roundIdx++
       }
-      currentRoundParticipants = matchesInRound
-      roundIdx++
     }
     return skeleton
-  }, [matches, totalParticipants])
+  }, [matches, totalParticipants, bracketStructure])
 
-  // Group matches by round
+  // Group matches by round for single/double/swiss
   const roundsMap = displayMatches.reduce((acc, match) => {
     const round = match.bracket_round
     if (!acc[round]) acc[round] = []
@@ -76,7 +80,7 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
   const totalRounds = sortedRoundIds.length
 
   const handleEditClick = (match: any) => {
-    if (match.id.includes('skeleton')) return
+    if (match.id && match.id.toString().includes('skeleton')) return
     setSelectedMatch(match)
     setEditScores({
       home: match.home_score || 0,
@@ -97,7 +101,7 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
   const handleSaveScore = async () => {
     if (!selectedMatch) return
     setIsSubmitting(true)
-    
+
     let winnerId = undefined
     if (editScores.home > editScores.away) winnerId = selectedMatch.home_team_id
     else if (editScores.away > editScores.home) winnerId = selectedMatch.away_team_id
@@ -117,12 +121,282 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
     setIsSubmitting(false)
   }
 
+  const renderMatchCard = (match: any, matchIdx: number, roundIdx: number, hasConnectingLines: boolean = true) => {
+    return (
+      <div key={match.id} className="relative group">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: (roundIdx * 0.1) + (matchIdx * 0.05) }}
+          onClick={() => isOrganizer && handleEditClick(match)}
+          className={`relative z-10 rounded-2xl border border-border bg-card/80 backdrop-blur-sm shadow-xl hover:border-accent-blue/50 transition-all duration-300 overflow-hidden ${match.id && match.id.toString().includes('skeleton') ? 'opacity-40 grayscale-[0.5]' : ''} ${isOrganizer && (!match.id || !match.id.toString().includes('skeleton')) ? 'cursor-pointer hover:ring-2 ring-accent-blue/30' : ''}`}
+        >
+          {isOrganizer && (!match.id || !match.id.toString().includes('skeleton')) && (
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Edit3 size={12} className="text-accent-blue" />
+            </div>
+          )}
+
+          {/* Home Team */}
+          <div className={`p-4 flex items-center justify-between border-b border-border/50 ${match.winner_team_id && match.winner_team_id === match.home_team_id ? 'bg-accent-blue/5' : ''}`}>
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border border-border">
+                {match.home_team?.avatar_url ? (
+                  <img src={match.home_team.avatar_url} className="w-full h-full object-cover" />
+                ) : (
+                  <Users size={14} className="text-muted-foreground" />
+                )}
+              </div>
+              <span className={`text-sm font-bold truncate max-w-[140px] ${match.winner_team_id && match.winner_team_id === match.home_team_id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {match.home_team?.name || 'TBD'}
+              </span>
+            </div>
+            <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm ${match.winner_team_id && match.winner_team_id === match.home_team_id ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/30' : 'bg-muted text-muted-foreground'}`}>
+              {match.home_score ?? '-'}
+            </div>
+          </div>
+
+          {/* Away Team */}
+          <div className={`p-4 flex items-center justify-between ${match.winner_team_id && match.winner_team_id === match.away_team_id ? 'bg-accent-blue/5' : ''}`}>
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border border-border">
+                {match.away_team?.avatar_url ? (
+                  <img src={match.away_team.avatar_url} className="w-full h-full object-cover" />
+                ) : (
+                  <Users size={14} className="text-muted-foreground" />
+                )}
+              </div>
+              <span className={`text-sm font-bold truncate max-w-[140px] ${match.winner_team_id && match.winner_team_id === match.away_team_id ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {match.away_team?.name || 'TBD'}
+              </span>
+            </div>
+            <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm ${match.winner_team_id && match.winner_team_id === match.away_team_id ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/30' : 'bg-muted text-muted-foreground'}`}>
+              {match.away_score ?? '-'}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Connecting Lines */}
+        {hasConnectingLines && roundIdx < totalRounds - 1 && (
+          <div className="absolute top-1/2 -right-12 w-12 h-px bg-border group-hover:bg-accent-blue/50 transition-colors z-0" />
+        )}
+      </div>
+    )
+  }
+
+  const renderSingleElimination = () => (
+    <div className="flex gap-12 min-w-max transition-all duration-700">
+      {sortedRoundIds.map((roundId, roundIdx) => (
+        <div key={roundId} className="flex flex-col space-y-8 w-72">
+          <div className="text-center pb-4">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue bg-accent-blue/10 px-4 py-1 rounded-full inline-block">
+              {getRoundName(roundIdx, totalRounds)}
+            </h4>
+          </div>
+          <div className="flex flex-col justify-around flex-grow space-y-12">
+            {roundsMap[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, matchIdx: number) =>
+              renderMatchCard(match, matchIdx, roundIdx, true)
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderDoubleElimination = () => (
+    <div className="space-y-16">
+      <div>
+        <h3 className="text-sm font-black uppercase tracking-widest text-emerald-500 mb-8 flex items-center gap-2">
+          <Trophy size={16} /> Winners Bracket
+        </h3>
+        <div className="flex gap-12 min-w-max transition-all duration-700">
+          {sortedRoundIds.map((roundId, roundIdx) => (
+            <div key={`winners-${roundId}`} className="flex flex-col space-y-8 w-64">
+              <div className="text-center pb-4">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 bg-emerald-500/10 px-4 py-1 rounded-full inline-block">
+                  {getRoundName(roundIdx, totalRounds)}
+                </h4>
+              </div>
+              <div className="flex flex-col justify-around flex-grow space-y-8">
+                {roundsMap[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, matchIdx: number) =>
+                  renderMatchCard({ ...match, id: `win-${match.id}` }, matchIdx, roundIdx, true)
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="pt-8 border-t border-border border-dashed">
+        <h3 className="text-sm font-black uppercase tracking-widest text-red-500 mb-8 flex items-center gap-2">
+          <Trophy size={16} className="opacity-50" /> Losers Bracket
+        </h3>
+        <div className="flex gap-12 min-w-max transition-all duration-700">
+          {sortedRoundIds.slice(0, Math.max(1, totalRounds - 1)).map((roundId, roundIdx) => (
+            <div key={`losers-${roundId}`} className="flex flex-col space-y-8 w-64">
+              <div className="text-center pb-4">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 bg-red-500/10 px-4 py-1 rounded-full inline-block">
+                  Losers R{roundIdx + 1}
+                </h4>
+              </div>
+              <div className="flex flex-col justify-around flex-grow space-y-8">
+                {roundsMap[roundId].slice(0, Math.max(1, Math.floor(roundsMap[roundId].length / 2))).map((match: any, matchIdx: number) =>
+                  renderMatchCard({ ...match, id: `los-${match.id}` }, matchIdx, roundIdx, true)
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderRoundRobin = () => {
+    // Generate dummy standings
+    const standings = Array.from({ length: totalParticipants }).map((_, i) => ({
+      id: i,
+      rank: i + 1,
+      name: `Team ${String.fromCharCode(65 + i)}`,
+      played: matches.length > 0 ? 5 : 0,
+      won: matches.length > 0 ? 5 - i : 0,
+      lost: matches.length > 0 ? i : 0,
+      drawn: 0,
+      points: matches.length > 0 ? (5 - i) * 3 : 0
+    }))
+
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        <div className="rounded-2xl border border-border bg-card/50 overflow-hidden backdrop-blur-sm">
+          <table className="w-full text-sm text-left">
+            <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/50">
+              <tr>
+                <th className="px-6 py-4">Rank</th>
+                <th className="px-6 py-4">Competitor</th>
+                <th className="px-6 py-4 text-center">Pld</th>
+                <th className="px-6 py-4 text-center">W</th>
+                <th className="px-6 py-4 text-center">D</th>
+                <th className="px-6 py-4 text-center">L</th>
+                <th className="px-6 py-4 text-right text-accent-blue">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((team, idx) => (
+                <motion.tr
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  key={team.id}
+                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                >
+                  <td className="px-6 py-4 font-black">{team.rank}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border">
+                        <Users size={14} className="text-muted-foreground" />
+                      </div>
+                      <span className="font-bold">{team.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-center font-bold text-muted-foreground">{team.played}</td>
+                  <td className="px-6 py-4 text-center font-bold text-emerald-500">{team.won}</td>
+                  <td className="px-6 py-4 text-center font-bold text-amber-500">{team.drawn}</td>
+                  <td className="px-6 py-4 text-center font-bold text-red-500">{team.lost}</td>
+                  <td className="px-6 py-4 text-right font-black text-accent-blue text-lg">{team.points}</td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )
+  }
+
+  const renderSwissSystem = () => (
+    <div className="flex flex-col gap-12 w-full max-w-3xl mx-auto transition-all duration-700">
+      {sortedRoundIds.map((roundId, roundIdx) => (
+        <div key={roundId} className="flex flex-col space-y-6 w-full">
+          <div className="pb-2 border-b border-border/50 flex items-center justify-between">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-purple bg-accent-purple/10 px-4 py-1 rounded-full inline-block">
+              Round {roundIdx + 1}
+            </h4>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              {roundsMap[roundId].length} Matches
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {roundsMap[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, matchIdx: number) =>
+              renderMatchCard(match, matchIdx, roundIdx, false)
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderGroupStage = () => {
+    const groups = ['Group A', 'Group B', 'Group C', 'Group D'].slice(0, Math.max(2, Math.ceil(totalParticipants / 4)))
+
+    return (
+      <div className="w-full space-y-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {groups.map((groupName, groupIdx) => (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: groupIdx * 0.1 }}
+              key={groupName}
+              className="rounded-2xl border border-border bg-card/50 overflow-hidden backdrop-blur-sm"
+            >
+              <div className="bg-muted/50 px-6 py-4 border-b border-border">
+                <h4 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                  <LayoutGrid size={16} className="text-accent-blue" /> {groupName}
+                </h4>
+              </div>
+              <table className="w-full text-sm text-left">
+                <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/20">
+                  <tr>
+                    <th className="px-4 py-3">Team</th>
+                    <th className="px-4 py-3 text-center">W-L</th>
+                    <th className="px-4 py-3 text-right text-accent-blue">Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <span className={`font-black text-xs ${i < 2 ? 'text-emerald-500' : 'text-muted-foreground'}`}>{i + 1}</span>
+                          <span className="font-bold">Team {String.fromCharCode(65 + (groupIdx * 4) + i)}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center font-bold text-muted-foreground">0-0</td>
+                      <td className="px-4 py-3 text-right font-black">0</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </motion.div>
+          ))}
+        </div>
+
+        <div className="pt-12 border-t border-border border-dashed">
+          <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-8 text-center flex items-center justify-center gap-2">
+            <Trophy size={16} /> Knockout Stage Preview
+          </h3>
+          <div className="opacity-50 scale-90 origin-top flex justify-center">
+            {renderSingleElimination()}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="relative w-full overflow-x-auto pb-12 pt-4 px-4 custom-scrollbar">
       {/* Generate Bracket Overlay for Organizers */}
       {isOrganizer && matches.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center z-20 bg-background/10 backdrop-blur-[2px] rounded-[3rem]">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="p-12 rounded-[3rem] bg-card/90 border border-border shadow-2xl text-center space-y-6 max-w-md mx-4"
@@ -146,93 +420,26 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
         </div>
       )}
 
-      <div className={`flex gap-12 min-w-max transition-all duration-700 ${isOrganizer && matches.length === 0 ? 'blur-md opacity-30 grayscale pointer-events-none' : ''}`}>
-        {sortedRoundIds.map((roundId, roundIdx) => (
-          <div key={roundId} className="flex flex-col space-y-8 w-72">
-            <div className="text-center pb-4">
-              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue bg-accent-blue/10 px-4 py-1 rounded-full inline-block">
-                {getRoundName(roundIdx, totalRounds)}
-              </h4>
-            </div>
-            
-            <div className="flex flex-col justify-around flex-grow space-y-12">
-              {roundsMap[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, matchIdx: number) => (
-                <div key={match.id} className="relative group">
-                  <motion.div 
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: (roundIdx * 0.1) + (matchIdx * 0.05) }}
-                    onClick={() => isOrganizer && handleEditClick(match)}
-                    className={`relative z-10 rounded-2xl border border-border bg-card/80 backdrop-blur-sm shadow-xl hover:border-accent-blue/50 transition-all duration-300 overflow-hidden ${match.id.includes('skeleton') ? 'opacity-40 grayscale-[0.5]' : ''} ${isOrganizer && !match.id.includes('skeleton') ? 'cursor-pointer hover:ring-2 ring-accent-blue/30' : ''}`}
-                  >
-                    {isOrganizer && !match.id.includes('skeleton') && (
-                      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Edit3 size={12} className="text-accent-blue" />
-                      </div>
-                    )}
-
-                    {/* Home Team */}
-                    <div className={`p-4 flex items-center justify-between border-b border-border/50 ${match.winner_team_id && match.winner_team_id === match.home_team_id ? 'bg-accent-blue/5' : ''}`}>
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border border-border">
-                          {match.home_team?.avatar_url ? (
-                            <img src={match.home_team.avatar_url} className="w-full h-full object-cover" />
-                          ) : (
-                            <Users size={14} className="text-muted-foreground" />
-                          )}
-                        </div>
-                        <span className={`text-sm font-bold truncate max-w-[140px] ${match.winner_team_id && match.winner_team_id === match.home_team_id ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          {match.home_team?.name || 'TBD'}
-                        </span>
-                      </div>
-                      <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm ${match.winner_team_id && match.winner_team_id === match.home_team_id ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/30' : 'bg-muted text-muted-foreground'}`}>
-                        {match.home_score ?? '-'}
-                      </div>
-                    </div>
-
-                    {/* Away Team */}
-                    <div className={`p-4 flex items-center justify-between ${match.winner_team_id && match.winner_team_id === match.away_team_id ? 'bg-accent-blue/5' : ''}`}>
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0 border border-border">
-                          {match.away_team?.avatar_url ? (
-                            <img src={match.away_team.avatar_url} className="w-full h-full object-cover" />
-                          ) : (
-                            <Users size={14} className="text-muted-foreground" />
-                          )}
-                        </div>
-                        <span className={`text-sm font-bold truncate max-w-[140px] ${match.winner_team_id && match.winner_team_id === match.away_team_id ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          {match.away_team?.name || 'TBD'}
-                        </span>
-                      </div>
-                      <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm ${match.winner_team_id && match.winner_team_id === match.away_team_id ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/30' : 'bg-muted text-muted-foreground'}`}>
-                        {match.away_score ?? '-'}
-                      </div>
-                    </div>
-                  </motion.div>
-
-                  {/* Connecting Lines */}
-                  {roundIdx < totalRounds - 1 && (
-                    <div className="absolute top-1/2 -right-12 w-12 h-px bg-border group-hover:bg-accent-blue/50 transition-colors z-0" />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+      <div className={`transition-all duration-700 ${isOrganizer && matches.length === 0 ? 'blur-md opacity-30 grayscale pointer-events-none' : ''}`}>
+        {bracketStructure === 'single_elimination' && renderSingleElimination()}
+        {bracketStructure === 'double_elimination' && renderDoubleElimination()}
+        {bracketStructure === 'round_robin' && renderRoundRobin()}
+        {bracketStructure === 'swiss_system' && renderSwissSystem()}
+        {bracketStructure === 'group_stage' && renderGroupStage()}
       </div>
 
       {/* Score Editor Modal */}
       <AnimatePresence>
         {selectedMatch && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedMatch(null)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -243,7 +450,7 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
                   <h3 className="text-xl font-black uppercase tracking-tight">Update Score</h3>
                   <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1">Confirmed Result</p>
                 </div>
-                <button 
+                <button
                   onClick={() => setSelectedMatch(null)}
                   className="p-2 rounded-full hover:bg-muted transition-colors"
                 >
@@ -264,8 +471,8 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
                     </div>
                     <span className="font-bold truncate max-w-[150px]">{selectedMatch.home_team?.name || 'Home Team'}</span>
                   </div>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={editScores.home}
                     onChange={(e) => setEditScores({ ...editScores, home: parseInt(e.target.value) || 0 })}
                     className="w-16 h-12 bg-card border border-border rounded-xl text-center font-black text-lg focus:ring-2 ring-accent-blue/50 outline-none transition-all"
@@ -284,8 +491,8 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
                     </div>
                     <span className="font-bold truncate max-w-[150px]">{selectedMatch.away_team?.name || 'Away Team'}</span>
                   </div>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     value={editScores.away}
                     onChange={(e) => setEditScores({ ...editScores, away: parseInt(e.target.value) || 0 })}
                     className="w-16 h-12 bg-card border border-border rounded-xl text-center font-black text-lg focus:ring-2 ring-accent-blue/50 outline-none transition-all"
@@ -294,13 +501,13 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
               </div>
 
               <div className="flex gap-4 pt-4">
-                <button 
+                <button
                   onClick={() => setSelectedMatch(null)}
                   className="flex-1 py-4 rounded-2xl bg-muted font-bold hover:bg-muted/80 transition-all uppercase tracking-widest text-xs"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   disabled={isSubmitting}
                   onClick={handleSaveScore}
                   className="flex-1 py-4 rounded-2xl bg-accent-blue text-white font-black hover:bg-accent-blue/90 transition-all shadow-lg shadow-accent-blue/30 uppercase tracking-widest text-xs flex items-center justify-center gap-2"

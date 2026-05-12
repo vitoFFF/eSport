@@ -294,6 +294,7 @@ export default async function TournamentDetailsPage({
                         totalParticipants={tournament.settings?.stage_participants_count || 8}
                         isOrganizer={user?.id === tournament.organizer_id}
                         tournamentId={tournament.id}
+                        bracketStructure={tournament.bracket_structure}
                     />
                 </div>
             </div>
