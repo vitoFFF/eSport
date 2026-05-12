@@ -279,24 +279,51 @@ export default function BracketView({
     )
   }
 
-  const renderSingleElimination = () => (
-    <div className="flex gap-12 min-w-max transition-all duration-700">
-      {sortedRoundIds.map((roundId, roundIdx) => (
-        <div key={roundId} className="flex flex-col space-y-8 w-72">
-          <div className="text-center pb-4">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue bg-accent-blue/10 px-4 py-1 rounded-full inline-block">
-              {getRoundName(roundIdx, totalRounds)}
-            </h4>
-          </div>
-          <div className="flex flex-col justify-around flex-grow space-y-12">
-            {roundsMap[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, matchIdx: number) =>
-              renderMatchCard(match, matchIdx, roundIdx, true)
-            )}
-          </div>
+  const renderSingleElimination = () => {
+    const rounds = displayMatches.filter(m => m.details?.bracket === 'winners' || (!m.details?.bracket && m.bracket_round < 50))
+    const thirdPlaceMatch = displayMatches.find(m => m.details?.bracket === 'third_place' || m.bracket_round === 99)
+
+    const roundsMapSingle = rounds.reduce((acc, m) => {
+      if (!acc[m.bracket_round]) acc[m.bracket_round] = []
+      acc[m.bracket_round].push(m)
+      return acc
+    }, {} as any)
+
+    const sortedIds = Object.keys(roundsMapSingle).map(Number).sort((a, b) => a - b)
+
+    return (
+      <div className="space-y-12">
+        <div className="flex gap-12 min-w-max pb-8">
+          {sortedIds.map((roundId, roundIdx) => (
+            <div key={roundId} className="flex flex-col space-y-8 w-72">
+              <div className="text-center pb-4">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue bg-accent-blue/10 px-4 py-1 rounded-full inline-block">
+                  {getRoundName(roundIdx, sortedIds.length)}
+                </h4>
+              </div>
+              <div className="flex flex-col justify-around flex-grow space-y-12">
+                {roundsMapSingle[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, matchIdx: number) =>
+                  renderMatchCard(match, matchIdx, roundIdx, true)
+                )}
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
-    </div>
-  )
+
+        {thirdPlaceMatch && (
+          <div className="pt-12 border-t border-border/50 border-dashed max-w-sm mx-auto">
+            <div className="text-center mb-6">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-500 bg-amber-500/10 px-6 py-2 rounded-full inline-block border border-amber-500/20">
+                Third-Place Match
+              </h4>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-2">Semi-Final Losers</p>
+            </div>
+            {renderMatchCard(thirdPlaceMatch, 0, 0, false)}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const renderDoubleElimination = () => {
     const winnersMatches = displayMatches.filter(m => m.details?.bracket === 'winners' || m.bracket_round < 10)
@@ -414,24 +441,50 @@ export default function BracketView({
   }
 
   const renderRoundRobin = () => {
-    // Use normalized participants or fallback to dummy
-    const standings = Array.from({ length: totalParticipants }).map((_, i) => {
-      const p = normalizedParticipants[i]
-      return {
-        id: p?.id || i,
-        rank: i + 1,
-        name: p?.name || `Team ${String.fromCharCode(65 + i)}`,
-        avatar_url: p?.avatar_url,
-        played: matches.length > 0 ? 5 : 0,
-        won: matches.length > 0 ? 5 - i : 0,
-        lost: matches.length > 0 ? i : 0,
-        drawn: 0,
-        points: matches.length > 0 ? (5 - i) * 3 : 0
+    // Calculate standings from matches
+    const stats = normalizedParticipants.reduce((acc, p) => {
+      acc[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, pld: 0, w: 0, d: 0, l: 0, pts: 0, diff: 0 }
+      return acc
+    }, {} as any)
+
+    matches.forEach(m => {
+      if (m.status === 'confirmed') {
+        const homeId = m.home_team_id || m.home_player_id
+        const awayId = m.away_team_id || m.away_player_id
+        if (!stats[homeId] || !stats[awayId]) return
+
+        stats[homeId].pld++
+        stats[awayId].pld++
+
+        const homeScore = m.home_score || 0
+        const awayScore = m.away_score || 0
+        stats[homeId].diff += (homeScore - awayScore)
+        stats[awayId].diff += (awayScore - homeScore)
+
+        if (homeScore > awayScore) {
+          stats[homeId].w++
+          stats[homeId].pts += 3
+          stats[awayId].l++
+        } else if (awayScore > homeScore) {
+          stats[awayId].w++
+          stats[awayId].pts += 3
+          stats[homeId].l++
+        } else {
+          stats[homeId].d++
+          stats[homeId].pts += 1
+          stats[awayId].d++
+          stats[awayId].pts += 1
+        }
       }
     })
 
+    const standings = Object.values(stats).sort((a: any, b: any) => {
+      if (b.pts !== a.pts) return b.pts - a.pts
+      return b.diff - a.diff // Differential tiebreaker
+    })
+
     return (
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full space-y-12">
         <div className="rounded-2xl border border-border bg-card/50 overflow-hidden backdrop-blur-sm">
           <table className="w-full text-sm text-left">
             <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/50">
@@ -442,11 +495,12 @@ export default function BracketView({
                 <th className="px-6 py-4 text-center">W</th>
                 <th className="px-6 py-4 text-center">D</th>
                 <th className="px-6 py-4 text-center">L</th>
+                <th className="px-6 py-4 text-center">+/-</th>
                 <th className="px-6 py-4 text-right text-accent-blue">Pts</th>
               </tr>
             </thead>
             <tbody>
-              {standings.map((team, idx) => (
+              {standings.map((team: any, idx: number) => (
                 <motion.tr
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -454,7 +508,9 @@ export default function BracketView({
                   key={team.id}
                   className="border-b border-border/50 hover:bg-muted/30 transition-colors"
                 >
-                  <td className="px-6 py-4 font-black">{team.rank}</td>
+                  <td className="px-6 py-4 font-black">
+                    <span className={idx < 3 ? 'text-accent-blue' : ''}>{idx + 1}</span>
+                  </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden">
@@ -467,12 +523,93 @@ export default function BracketView({
                       <span className="font-bold">{team.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-center font-bold text-muted-foreground">{team.played}</td>
-                  <td className="px-6 py-4 text-center font-bold text-emerald-500">{team.won}</td>
-                  <td className="px-6 py-4 text-center font-bold text-amber-500">{team.drawn}</td>
-                  <td className="px-6 py-4 text-center font-bold text-red-500">{team.lost}</td>
-                  <td className="px-6 py-4 text-right font-black text-accent-blue text-lg">{team.points}</td>
+                  <td className="px-6 py-4 text-center font-bold text-muted-foreground">{team.pld}</td>
+                  <td className="px-6 py-4 text-center font-bold text-emerald-500">{team.w}</td>
+                  <td className="px-6 py-4 text-center font-bold text-amber-500">{team.d}</td>
+                  <td className="px-6 py-4 text-center font-bold text-red-500">{team.l}</td>
+                  <td className="px-6 py-4 text-center font-bold">{team.diff > 0 ? `+${team.diff}` : team.diff}</td>
+                  <td className="px-6 py-4 text-right font-black text-accent-blue text-lg">{team.pts}</td>
                 </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Schedule List */}
+        <div className="space-y-6">
+          <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground px-4">Match Schedule</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {matches.map((m, i) => renderMatchCard(m, i, 0, false))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const renderSwissSystem = () => {
+    // Calculate standings for Swiss
+    const stats = normalizedParticipants.reduce((acc, p) => {
+      acc[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, w: 0, l: 0, pts: 0 }
+      return acc
+    }, {} as any)
+
+    matches.forEach(m => {
+      if (m.status === 'confirmed') {
+        const homeId = m.home_team_id || m.home_player_id
+        const awayId = m.away_team_id || m.away_player_id
+        if (!stats[homeId] || !stats[awayId]) return
+        if (m.home_score > m.away_score) {
+          stats[homeId].w++; stats[homeId].pts += 3
+          stats[awayId].l++
+        } else if (m.away_score > m.home_score) {
+          stats[awayId].w++; stats[awayId].pts += 3
+          stats[homeId].l++
+        }
+      }
+    })
+
+    const standings = Object.values(stats).sort((a: any, b: any) => b.pts - a.pts)
+
+    return (
+      <div className="w-full space-y-16">
+        <div className="flex gap-12 min-w-max pb-4 overflow-x-auto">
+          {sortedRoundIds.map((roundId, roundIdx) => (
+            <div key={roundId} className="flex flex-col space-y-8 w-72">
+              <div className="text-center pb-4">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-blue bg-accent-blue/10 px-4 py-1 rounded-full inline-block">
+                  Swiss Round {roundIdx + 1}
+                </h4>
+              </div>
+              <div className="flex flex-col justify-around flex-grow space-y-8">
+                {roundsMap[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, matchIdx: number) =>
+                  renderMatchCard(match, matchIdx, roundIdx, false)
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card/50 overflow-hidden backdrop-blur-sm max-w-2xl mx-auto">
+          <div className="bg-muted/50 px-6 py-4 border-b border-border">
+            <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Current Standings</h4>
+          </div>
+          <table className="w-full text-sm text-left">
+            <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/20">
+              <tr>
+                <th className="px-6 py-4">Rank</th>
+                <th className="px-6 py-4">Competitor</th>
+                <th className="px-6 py-4 text-center">W-L</th>
+                <th className="px-6 py-4 text-right text-accent-blue">Pts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {standings.map((team: any, idx: number) => (
+                <tr key={team.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                  <td className="px-6 py-4 font-black">{idx + 1}</td>
+                  <td className="px-6 py-4 font-bold">{team.name}</td>
+                  <td className="px-6 py-4 text-center text-muted-foreground">{team.w}-{team.l}</td>
+                  <td className="px-6 py-4 text-right font-black text-accent-blue">{team.pts}</td>
+                </tr>
               ))}
             </tbody>
           </table>
@@ -481,82 +618,95 @@ export default function BracketView({
     )
   }
 
-  const renderSwissSystem = () => (
-    <div className="flex flex-col gap-12 w-full max-w-3xl mx-auto transition-all duration-700">
-      {sortedRoundIds.map((roundId, roundIdx) => (
-        <div key={roundId} className="flex flex-col space-y-6 w-full">
-          <div className="pb-2 border-b border-border/50 flex items-center justify-between">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-purple bg-accent-purple/10 px-4 py-1 rounded-full inline-block">
-              Round {roundIdx + 1}
-            </h4>
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
-              {roundsMap[roundId].length} Matches
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {roundsMap[roundId].sort((a: any, b: any) => a.match_order - b.match_order).map((match: any, matchIdx: number) =>
-              renderMatchCard(match, matchIdx, roundIdx, false)
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-
   const renderGroupStage = () => {
-    const groups = ['Group A', 'Group B', 'Group C', 'Group D'].slice(0, Math.max(2, Math.ceil(totalParticipants / 4)))
+    const numGroups = Math.max(2, Math.ceil(normalizedParticipants.length / 4))
+    const groups = Array.from({ length: numGroups }).map((_, i) => `Group ${String.fromCharCode(65 + i)}`)
 
     return (
       <div className="w-full space-y-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {groups.map((groupName, groupIdx) => (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: groupIdx * 0.1 }}
-              key={groupName}
-              className="rounded-2xl border border-border bg-card/50 overflow-hidden backdrop-blur-sm"
-            >
-              <div className="bg-muted/50 px-6 py-4 border-b border-border">
-                <h4 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                  <LayoutGrid size={16} className="text-accent-blue" /> {groupName}
-                </h4>
-              </div>
-              <table className="w-full text-sm text-left">
-                <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/20">
-                  <tr>
-                    <th className="px-4 py-3">Team</th>
-                    <th className="px-4 py-3 text-center">W-L</th>
-                    <th className="px-4 py-3 text-right text-accent-blue">Pts</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: 4 }).map((_, i) => {
-                    const p = normalizedParticipants[groupIdx * 4 + i]
-                    return (
-                      <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+          {groups.map((groupName, groupIdx) => {
+            const groupMatches = matches.filter(m => m.details?.group_index === groupIdx || m.bracket_round === groupIdx)
+            const groupStats: any = {}
+
+            // Filter participants for this group
+            const groupParticipants = normalizedParticipants.slice(groupIdx * 4, (groupIdx + 1) * 4)
+            groupParticipants.forEach(p => {
+              groupStats[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, w: 0, l: 0, pts: 0 }
+            })
+
+            groupMatches.forEach(m => {
+              if (m.status === 'confirmed') {
+                const homeId = m.home_team_id || m.home_player_id
+                const awayId = m.away_team_id || m.away_player_id
+                if (!groupStats[homeId] || !groupStats[awayId]) return
+                if (m.home_score > m.away_score) {
+                  groupStats[homeId].w++; groupStats[homeId].pts += 3
+                } else if (m.away_score > m.home_score) {
+                  groupStats[awayId].w++; groupStats[awayId].pts += 3
+                }
+              }
+            })
+
+            const sortedStandings = Object.values(groupStats).sort((a: any, b: any) => b.pts - a.pts)
+
+            return (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: groupIdx * 0.1 }}
+                key={groupName}
+                className="rounded-2xl border border-border bg-card/50 overflow-hidden backdrop-blur-sm"
+              >
+                <div className="bg-muted/50 px-6 py-4 border-b border-border flex justify-between items-center">
+                  <h4 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                    <LayoutGrid size={16} className="text-accent-blue" /> {groupName}
+                  </h4>
+                  <span className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest bg-emerald-500/10 px-2 py-1 rounded">Top 2 Advance</span>
+                </div>
+                <table className="w-full text-sm text-left">
+                  <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/20">
+                    <tr>
+                      <th className="px-4 py-3">Team</th>
+                      <th className="px-4 py-3 text-center">W-L</th>
+                      <th className="px-4 py-3 text-right text-accent-blue">Pts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedStandings.map((team: any, i: number) => (
+                      <tr key={team.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             <span className={`font-black text-xs ${i < 2 ? 'text-emerald-500' : 'text-muted-foreground'}`}>{i + 1}</span>
                             <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden">
-                              {p?.avatar_url ? (
-                                <img src={p.avatar_url} className="w-full h-full object-cover" />
+                              {team.avatar_url ? (
+                                <img src={team.avatar_url} className="w-full h-full object-cover" />
                               ) : (
                                 <Users size={10} className="text-muted-foreground" />
                               )}
                             </div>
-                            <span className="font-bold">{p?.name || `Team ${String.fromCharCode(65 + (groupIdx * 4) + i)}`}</span>
+                            <span className="font-bold">{team.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-center font-bold text-muted-foreground">0-0</td>
-                        <td className="px-4 py-3 text-right font-black">0</td>
+                        <td className="px-4 py-3 text-center font-bold text-muted-foreground">{team.w}-{team.l}</td>
+                        <td className="px-4 py-3 text-right font-black">{team.pts}</td>
                       </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </motion.div>
-          ))}
+                    ))}
+                    {sortedStandings.length === 0 && Array.from({ length: 4 }).map((_, i) => (
+                      <tr key={`empty-${i}`} className="opacity-20">
+                        <td className="px-4 py-3 flex items-center gap-3">
+                          <span className="text-xs font-black">{i + 1}</span>
+                          <span className="font-bold">TBD</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">0-0</td>
+                        <td className="px-4 py-3 text-right">0</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </motion.div>
+            )
+          })}
         </div>
 
         <div className="pt-12 border-t border-border border-dashed">

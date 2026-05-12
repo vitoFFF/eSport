@@ -256,11 +256,11 @@ export async function generateBracketMatches(tournamentId: string) {
   // Clear existing matches for this tournament to avoid duplicates
   await supabase.from('matches').delete().eq('tournament_id', tournamentId)
 
-  const participantsCount = Number(tournament.settings?.stage_participants_count) || 8
-  const rounds = Math.ceil(Math.log2(participantsCount))
+  const participantsCount = Number(tournament.settings?.stage_participants_count) || registrations.length
   const matchesToInsert: any[] = []
 
   if (tournament.bracket_structure === 'double_elimination') {
+    const rounds = Math.ceil(Math.log2(participantsCount))
     // 1. Winners Bracket
     for (let r = 0; r < rounds; r++) {
       const matchesInRound = Math.pow(2, rounds - r - 1)
@@ -290,28 +290,17 @@ export async function generateBracketMatches(tournamentId: string) {
     }
 
     // 2. Losers Bracket
-    // LB has 2 * (rounds - 1) rounds
-    // Pattern: Survival (Phase A) -> Drop-in (Phase B)
     let lbRoundCount = (rounds - 1) * 2
     for (let r = 0; r < lbRoundCount; r++) {
-      // Logic for matches in LB round:
-      // Round 0 (Survival): N/4 matches
-      // Round 1 (Drop-in): N/4 matches
-      // Round 2 (Survival): N/8 matches
-      // Round 3 (Drop-in): N/8 matches
       const wbRoundEq = Math.floor(r / 2)
       const matchesInRound = Math.pow(2, rounds - wbRoundEq - 2)
-      
       for (let m = 0; m < matchesInRound; m++) {
         matchesToInsert.push({
           tournament_id: tournamentId,
-          bracket_round: 10 + r, // Offset for Losers
+          bracket_round: 10 + r,
           match_order: m,
           status: 'pending',
-          details: { 
-            bracket: 'losers',
-            phase: r % 2 === 0 ? 'survival' : 'drop-in'
-          }
+          details: { bracket: 'losers', phase: r % 2 === 0 ? 'survival' : 'drop-in' }
         })
       }
     }
@@ -319,23 +308,88 @@ export async function generateBracketMatches(tournamentId: string) {
     // 3. Grand Finals
     matchesToInsert.push({
       tournament_id: tournamentId,
-      bracket_round: 20, // Grand Final
+      bracket_round: 20,
       match_order: 0,
       status: 'pending',
       details: { bracket: 'grand_finals' }
     })
-    
-    // Potential Reset Match
     matchesToInsert.push({
       tournament_id: tournamentId,
-      bracket_round: 21, // Grand Final Reset
+      bracket_round: 21,
       match_order: 0,
       status: 'pending',
       details: { bracket: 'grand_finals_reset' }
     })
 
+  } else if (tournament.bracket_structure === 'round_robin') {
+    // Every participant plays every other participant
+    for (let i = 0; i < registrations.length; i++) {
+      for (let j = i + 1; j < registrations.length; j++) {
+        matchesToInsert.push({
+          tournament_id: tournamentId,
+          bracket_round: 0,
+          match_order: matchesToInsert.length,
+          status: 'pending',
+          home_team_id: registrations[i].team_id,
+          home_player_id: registrations[i].player_id,
+          away_team_id: registrations[j].team_id,
+          away_player_id: registrations[j].player_id,
+          details: { bracket: 'round_robin' }
+        })
+      }
+    }
+
+  } else if (tournament.bracket_structure === 'swiss_system') {
+    // Initial round pairings
+    const numRounds = Math.ceil(Math.log2(registrations.length))
+    for (let r = 0; r < numRounds; r++) {
+      const matchesInRound = Math.floor(registrations.length / 2)
+      for (let m = 0; m < matchesInRound; m++) {
+        const matchData: any = {
+          tournament_id: tournamentId,
+          bracket_round: r,
+          match_order: m,
+          status: 'pending',
+          details: { bracket: 'swiss' }
+        }
+        // Only assign teams for Round 1
+        if (r === 0) {
+          matchData.home_team_id = registrations[m * 2].team_id
+          matchData.home_player_id = registrations[m * 2].player_id
+          matchData.away_team_id = registrations[m * 2 + 1].team_id
+          matchData.away_player_id = registrations[m * 2 + 1].player_id
+        }
+        matchesToInsert.push(matchData)
+      }
+    }
+
+  } else if (tournament.bracket_structure === 'group_stage') {
+    // Divide into groups of 4
+    const groupSize = 4
+    const numGroups = Math.ceil(registrations.length / groupSize)
+    for (let g = 0; g < numGroups; g++) {
+      const groupRegistrations = registrations.slice(g * groupSize, (g + 1) * groupSize)
+      // Round Robin within group
+      for (let i = 0; i < groupRegistrations.length; i++) {
+        for (let j = i + 1; j < groupRegistrations.length; j++) {
+          matchesToInsert.push({
+            tournament_id: tournamentId,
+            bracket_round: g, // Use round to store group index
+            match_order: matchesToInsert.length,
+            status: 'pending',
+            home_team_id: groupRegistrations[i].team_id,
+            home_player_id: groupRegistrations[i].player_id,
+            away_team_id: groupRegistrations[j].team_id,
+            away_player_id: groupRegistrations[j].player_id,
+            details: { bracket: 'group_stage', group_index: g }
+          })
+        }
+      }
+    }
+
   } else {
-    // Standard Single Elimination
+    // Single Elimination
+    const rounds = Math.ceil(Math.log2(participantsCount))
     for (let r = 0; r < rounds; r++) {
       const matchesInRound = Math.pow(2, rounds - r - 1)
       for (let m = 0; m < matchesInRound; m++) {
@@ -350,6 +404,7 @@ export async function generateBracketMatches(tournamentId: string) {
         if (r === 0) {
           const homeIdx = m * 2
           const awayIdx = m * 2 + 1
+          
           if (homeIdx < registrations.length) {
             matchData.home_team_id = registrations[homeIdx].team_id
             matchData.home_player_id = registrations[homeIdx].player_id
@@ -362,6 +417,14 @@ export async function generateBracketMatches(tournamentId: string) {
         matchesToInsert.push(matchData)
       }
     }
+    // Add Third Place Match
+    matchesToInsert.push({
+      tournament_id: tournamentId,
+      bracket_round: 99, // Special round ID for 3rd place
+      match_order: 0,
+      status: 'pending',
+      details: { bracket: 'third_place' }
+    })
   }
 
   const { error } = await supabase.from('matches').insert(matchesToInsert)
