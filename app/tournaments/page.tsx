@@ -94,16 +94,16 @@ export default async function TournamentsCategoryPage({
   return (
     <div className="min-h-screen bg-background">
       {/* Luxury Hero Section */}
-      <section className="relative min-h-[60vh] flex items-center pt-32 pb-20 overflow-hidden">
-        {/* Background Image with Parallax-like effect */}
-        <div className="absolute inset-0 z-0">
+      <section className="relative min-h-[60vh] flex items-center pt-32 pb-20">
+        {/* Background Image with Rounded Corners */}
+        <div className="absolute inset-y-0 left-2 right-2 z-0 overflow-hidden rounded-[4rem] shadow-2xl border border-white/10">
           <img
             src={config.image}
             alt={config.title}
-            className="w-full h-full object-cover scale-105 brightness-[0.4] dark:brightness-[0.3] contrast-125 transition-transform duration-[10s] hover:scale-110"
+            className="w-full h-full object-cover scale-110 brightness-[0.7] dark:brightness-[0.5] contrast-125 transition-transform duration-[10s] hover:scale-115 blur-[2px]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80" />
         </div>
 
         {/* Decorative Light Beams */}
@@ -188,8 +188,8 @@ export default async function TournamentsCategoryPage({
                   {/* Status Overlay */}
                   <div className="absolute top-6 right-6 z-20">
                     <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] flex items-center space-x-2 glass border shadow-lg ${event.status === 'Open' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500' :
-                        event.status === 'Ongoing' ? 'border-amber-500/30 bg-amber-500/10 text-amber-500' :
-                          'border-white/20 bg-white/5 text-slate-300'
+                      event.status === 'Ongoing' ? 'border-amber-500/30 bg-amber-500/10 text-amber-500' :
+                        'border-white/20 bg-white/5 text-slate-300'
                       }`}>
                       {event.status === 'Open' && <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />

@@ -20,6 +20,7 @@ ALTER TYPE public.user_role ADD VALUE IF NOT EXISTS 'manager';
 
 -- Create a profiles table
 
+
 CREATE TABLE public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL PRIMARY KEY,
   role public.user_role DEFAULT 'player',

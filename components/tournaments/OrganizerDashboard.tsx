@@ -227,10 +227,7 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                   { value: 'double_elimination', label: 'Double Elimination', emoji: '🥈' },
                   { value: 'round_robin', label: 'Round Robin', emoji: '🔄' },
                   { value: 'swiss_system', label: 'Swiss System', emoji: '🇨🇭' },
-                  { value: 'league', label: 'League', emoji: '📊' },
-                  { value: 'gauntlet', label: 'Gauntlet', emoji: '⚔️' },
-                  { value: 'bracket_groups', label: 'Bracket Groups', emoji: '👥' },
-                  { value: 'custom', label: 'Custom', emoji: '⚙️' },
+                  { value: 'group_stage', label: 'Group Stage', emoji: '👥' },
                 ]}
               />
               <ModernSelect
@@ -248,13 +245,6 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                 <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Participants</label>
                 <input name="stageParticipants" type="number" defaultValue={8} min={2} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
               </div>
-
-              {bracketStructure === 'custom' && (
-                <div className="space-y-2 col-span-1 md:col-span-4 transition-all duration-300">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Custom Structure Details</label>
-                  <input name="customBracketStructure" placeholder="Describe your custom bracket..." className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none focus:ring-2 focus:ring-accent-blue/50" />
-                </div>
-              )}
 
               {['single_elimination', 'double_elimination'].includes(bracketStructure) && (
                 <div className="space-y-2 col-span-2 flex items-center gap-4 mt-6 transition-all duration-300">
