@@ -15,6 +15,9 @@ export default async function TournamentDetailsPage({
 }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const { data: profile } = user 
+    ? await supabase.from("profiles").select("role").eq("id", user.id).single()
+    : { data: null };
 
   const resolvedParams = await params;
   const tournamentId = resolvedParams.id;
@@ -257,6 +260,14 @@ export default async function TournamentDetailsPage({
                          Go to Login
                        </button>
                     </Link>
+                  </div>
+                ) : profile?.role === 'organizer' ? (
+                  <div className="p-6 rounded-2xl bg-accent-blue/10 border border-accent-blue/20 text-center space-y-2">
+                     <Trophy className="mx-auto text-accent-blue opacity-50 mb-1" size={24} />
+                     <p className="text-sm font-black text-accent-blue uppercase tracking-widest">Organizer Mode</p>
+                     <p className="text-[11px] text-muted-foreground font-bold leading-relaxed px-2">
+                       As an organizer, you are here to manage the competition, not to participate in it.
+                     </p>
                   </div>
                 ) : isRegistered ? (
                   <div className="space-y-4">
