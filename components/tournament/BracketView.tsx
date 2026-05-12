@@ -49,6 +49,7 @@ export default function BracketView({
   const [isGenerating, setIsGenerating] = useState(false)
   const [editScores, setEditScores] = useState({ home: 0, away: 0 })
 
+  // Normalize participants and matches
   const normalizedParticipants = React.useMemo(() => {
     return registrations.map(reg => ({
       id: reg.team_id || reg.player_id,
@@ -57,19 +58,34 @@ export default function BracketView({
     }))
   }, [registrations])
 
-  // Skeleton generation based on structure
+  // Skeleton generation or Real match normalization
   const displayMatches = React.useMemo(() => {
-    if (matches && matches.length > 0) return matches
+    // If we have real matches, normalize their team/player names
+    if (matches && matches.length > 0) {
+      return matches.map(m => ({
+        ...m,
+        home_team: m.home_team || (m.home_player ? { 
+          name: m.home_player.username || m.home_player.full_name, 
+          avatar_url: m.home_player.avatar_url 
+        } : null),
+        away_team: m.away_team || (m.away_player ? { 
+          name: m.away_player.username || m.away_player.full_name, 
+          avatar_url: m.away_player.avatar_url 
+        } : null)
+      }))
+    }
 
     const skeleton: any[] = []
+    const participantsCount = Number(totalParticipants) || 8
 
     if (['single_elimination', 'double_elimination', 'swiss_system'].includes(bracketStructure)) {
-      let currentRoundParticipants = totalParticipants
+      let currentRoundParticipants = participantsCount
       let roundIdx = 0
 
       while (currentRoundParticipants > 1) {
         const matchesInRound = Math.floor(currentRoundParticipants / 2)
         for (let i = 0; i < matchesInRound; i++) {
+          // Only populate names for the very first round
           const homeParticipant = roundIdx === 0 ? normalizedParticipants[i * 2] : null
           const awayParticipant = roundIdx === 0 ? normalizedParticipants[i * 2 + 1] : null
 

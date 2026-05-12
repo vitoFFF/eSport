@@ -98,7 +98,9 @@ export default async function TournamentDetailsPage({
     .select(`
       *,
       home_team:home_team_id (name, avatar_url),
-      away_team:away_team_id (name, avatar_url)
+      away_team:away_team_id (name, avatar_url),
+      home_player:home_player_id (username, full_name, avatar_url),
+      away_player:away_player_id (username, full_name, avatar_url)
     `)
     .eq("tournament_id", tournament.id)
     .order('bracket_round', { ascending: true })
