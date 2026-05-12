@@ -21,6 +21,7 @@ interface Match {
 
 interface BracketViewProps {
   matches: any[]
+  registrations?: any[]
   totalParticipants?: number
   isOrganizer?: boolean
   tournamentId?: string
@@ -35,11 +36,26 @@ const getRoundName = (roundIdx: number, totalRounds: number) => {
   return `Round ${roundIdx + 1}`
 }
 
-export default function BracketView({ matches, totalParticipants = 8, isOrganizer = false, tournamentId, bracketStructure = 'single_elimination' }: BracketViewProps) {
+export default function BracketView({
+  matches,
+  registrations = [],
+  totalParticipants = 8,
+  isOrganizer = false,
+  tournamentId,
+  bracketStructure = 'single_elimination'
+}: BracketViewProps) {
   const [selectedMatch, setSelectedMatch] = useState<any | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [editScores, setEditScores] = useState({ home: 0, away: 0 })
+
+  const normalizedParticipants = React.useMemo(() => {
+    return registrations.map(reg => ({
+      id: reg.team_id || reg.player_id,
+      name: reg.teams?.name || reg.profiles?.username || reg.profiles?.full_name || 'Unknown',
+      avatar_url: reg.teams?.avatar_url || reg.profiles?.avatar_url
+    }))
+  }, [registrations])
 
   // Skeleton generation based on structure
   const displayMatches = React.useMemo(() => {
@@ -54,11 +70,16 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
       while (currentRoundParticipants > 1) {
         const matchesInRound = Math.floor(currentRoundParticipants / 2)
         for (let i = 0; i < matchesInRound; i++) {
+          const homeParticipant = roundIdx === 0 ? normalizedParticipants[i * 2] : null
+          const awayParticipant = roundIdx === 0 ? normalizedParticipants[i * 2 + 1] : null
+
           skeleton.push({
             id: `skeleton-${roundIdx}-${i}`,
             bracket_round: roundIdx,
             match_order: i,
-            status: 'pending'
+            status: 'pending',
+            home_team: homeParticipant,
+            away_team: awayParticipant
           })
         }
         currentRoundParticipants = matchesInRound
@@ -66,7 +87,7 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
       }
     }
     return skeleton
-  }, [matches, totalParticipants, bracketStructure])
+  }, [matches, totalParticipants, bracketStructure, normalizedParticipants])
 
   // Group matches by round for single/double/swiss
   const roundsMap = displayMatches.reduce((acc, match) => {
@@ -252,17 +273,21 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
   )
 
   const renderRoundRobin = () => {
-    // Generate dummy standings
-    const standings = Array.from({ length: totalParticipants }).map((_, i) => ({
-      id: i,
-      rank: i + 1,
-      name: `Team ${String.fromCharCode(65 + i)}`,
-      played: matches.length > 0 ? 5 : 0,
-      won: matches.length > 0 ? 5 - i : 0,
-      lost: matches.length > 0 ? i : 0,
-      drawn: 0,
-      points: matches.length > 0 ? (5 - i) * 3 : 0
-    }))
+    // Use normalized participants or fallback to dummy
+    const standings = Array.from({ length: totalParticipants }).map((_, i) => {
+      const p = normalizedParticipants[i]
+      return {
+        id: p?.id || i,
+        rank: i + 1,
+        name: p?.name || `Team ${String.fromCharCode(65 + i)}`,
+        avatar_url: p?.avatar_url,
+        played: matches.length > 0 ? 5 : 0,
+        won: matches.length > 0 ? 5 - i : 0,
+        lost: matches.length > 0 ? i : 0,
+        drawn: 0,
+        points: matches.length > 0 ? (5 - i) * 3 : 0
+      }
+    })
 
     return (
       <div className="w-full max-w-4xl mx-auto">
@@ -291,8 +316,12 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
                   <td className="px-6 py-4 font-black">{team.rank}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border">
-                        <Users size={14} className="text-muted-foreground" />
+                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden">
+                        {team.avatar_url ? (
+                          <img src={team.avatar_url} className="w-full h-full object-cover" />
+                        ) : (
+                          <Users size={14} className="text-muted-foreground" />
+                        )}
                       </div>
                       <span className="font-bold">{team.name}</span>
                     </div>
@@ -361,18 +390,28 @@ export default function BracketView({ matches, totalParticipants = 8, isOrganize
                   </tr>
                 </thead>
                 <tbody>
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <span className={`font-black text-xs ${i < 2 ? 'text-emerald-500' : 'text-muted-foreground'}`}>{i + 1}</span>
-                          <span className="font-bold">Team {String.fromCharCode(65 + (groupIdx * 4) + i)}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center font-bold text-muted-foreground">0-0</td>
-                      <td className="px-4 py-3 text-right font-black">0</td>
-                    </tr>
-                  ))}
+                  {Array.from({ length: 4 }).map((_, i) => {
+                    const p = normalizedParticipants[groupIdx * 4 + i]
+                    return (
+                      <tr key={i} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <span className={`font-black text-xs ${i < 2 ? 'text-emerald-500' : 'text-muted-foreground'}`}>{i + 1}</span>
+                            <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden">
+                              {p?.avatar_url ? (
+                                <img src={p.avatar_url} className="w-full h-full object-cover" />
+                              ) : (
+                                <Users size={10} className="text-muted-foreground" />
+                              )}
+                            </div>
+                            <span className="font-bold">{p?.name || `Team ${String.fromCharCode(65 + (groupIdx * 4) + i)}`}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center font-bold text-muted-foreground">0-0</td>
+                        <td className="px-4 py-3 text-right font-black">0</td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </motion.div>

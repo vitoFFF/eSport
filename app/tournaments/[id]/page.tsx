@@ -291,6 +291,7 @@ export default async function TournamentDetailsPage({
                 <div className="relative z-10">
                     <BracketView 
                         matches={matches || []} 
+                        registrations={registrations || []}
                         totalParticipants={tournament.settings?.stage_participants_count || 8}
                         isOrganizer={user?.id === tournament.organizer_id}
                         tournamentId={tournament.id}
