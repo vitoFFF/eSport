@@ -2,138 +2,156 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Trophy, CreditCard, ChevronRight, Play } from "lucide-react";
+import { Trophy, CreditCard, ChevronRight, Play, Gamepad2, Users, Star, ArrowUpRight } from "lucide-react";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-[90vh] flex items-center pt-24 overflow-x-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl -z-10">
+    <section className="relative w-full min-h-[500px] md:min-h-[650px] lg:min-h-[750px] flex flex-col justify-center pt-24 pb-16 md:pt-32 md:pb-20 overflow-hidden">
+      {/* Immersive Background */}
+      <div className="absolute inset-0 z-0 bg-background">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(59,130,246,0.1),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_100%,rgba(168,85,247,0.1),transparent)]" />
       </div>
 
-      {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none -z-[5]" />
+      {/* Subtle Light Accents */}
+      <div className="absolute top-0 right-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-accent-blue/10 blur-[100px] rounded-full -z-10 animate-pulse" />
+      <div className="absolute bottom-1/4 left-1/4 w-[250px] md:w-[400px] h-[250px] md:h-[400px] bg-accent-purple/10 blur-[100px] rounded-full -z-10 animate-pulse delay-700" />
 
-      <div className="container mx-auto px-6 z-10 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center w-full">
+      <div className="container mx-auto px-6 lg:px-12 relative z-20 w-full flex-grow flex items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center w-full">
+          
+          {/* Left Column: Content */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="space-y-6 pt-12"
+            className="space-y-6 md:space-y-8"
           >
-  
-  
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] text-foreground text-shadow-3d uppercase">
-              ELEVATE YOUR <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue to-accent-purple">GAME</span>. <br />
-              DOMINATE THE ARENA.
-            </h1>
-  
-            <p className="text-base sm:text-lg md:text-xl font-medium text-muted-foreground max-w-xl leading-relaxed">
-              The ultimate platform for competitive players. Weekly tournaments, and massive prize pools await.
-            </p>
-  
-            <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-              <button className="w-full sm:w-auto group flex items-center justify-center space-x-2 px-8 py-4 rounded-full bg-accent-blue text-white font-bold text-[15px] sm:text-lg glow-blue hover:bg-blue-700 dark:hover:bg-accent-blue/90 transition-all active:scale-95">
-                <Trophy size={22} />
-                <span>Find a Tournament</span>
-                <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            <div className="inline-flex items-center space-x-3 px-4 py-1.5 rounded-full glass border border-white/5 shadow-lg backdrop-blur-md">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-accent-blue animate-pulse" />
+              <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-foreground/70">PRO LEAGUE PLATFORM</span>
+            </div>
+
+            <div className="space-y-2 md:space-y-3">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight leading-[1.1] text-foreground">
+                The New Standard <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue via-accent-purple to-pink-500">of Performance</span>.
+              </h1>
+              <p className="text-base md:text-lg lg:text-xl font-medium text-slate-400 max-w-lg leading-relaxed">
+                Elevate your competitive edge on the most advanced platform for professional athletes and elite gamers.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-4 pt-4">
+              <button className="group relative px-7 py-3.5 rounded-xl bg-foreground text-background font-bold uppercase tracking-wider text-[11px] overflow-hidden transition-all hover:scale-[1.02] active:scale-95 shadow-lg">
+                <div className="absolute inset-0 bg-gradient-to-r from-accent-blue to-accent-purple opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="relative z-10 flex items-center justify-center space-x-2 group-hover:text-white transition-colors">
+                  <Trophy size={16} />
+                  <span>Explore Tournaments</span>
+                  <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                </div>
               </button>
-              <button className="w-full sm:w-auto group flex items-center justify-center space-x-2 px-8 py-4 rounded-full border-2 border-accent-purple/50 text-accent-purple hover:bg-accent-purple hover:text-white font-bold text-[15px] sm:text-lg transition-all duration-300 shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:shadow-purple-500/40 active:scale-95">
-                <CreditCard size={22} className="group-hover:scale-110 transition-transform" />
-                <span>Create Player Card</span>
+
+              <button className="group px-7 py-3.5 rounded-xl luxury-glass border border-white/10 text-foreground font-bold uppercase tracking-wider text-[11px] transition-all hover:bg-white/5 hover:scale-[1.02] active:scale-95 shadow-md flex items-center justify-center">
+                <div className="flex items-center space-x-2">
+                  <CreditCard size={16} className="text-accent-purple" />
+                  <span>Join as Pro</span>
+                </div>
               </button>
             </div>
 
-          <div className="flex items-center space-x-6 pt-4">
-            <div className="flex -space-x-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-10 h-10 rounded-full border-2 border-background bg-muted overflow-hidden shadow-xl">
-                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`} alt="User" />
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-muted-foreground">
-              <span className="text-foreground font-bold">12k+</span> players already competing
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Right Content - Visual */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.2 }}
-          className="relative hidden md:block perspective-2000 rounded-3xl p-4 max-w-[32rem] ml-auto lg:mr-8 xl:mr-16"
-        >
-          {/* Mock UI Element */}
-          <div className="relative z-10 luxury-glass rounded-3xl p-6 border border-white/10 shadow-3d hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] transition-all duration-700 group/card transform-gpu hover:rotate-x-2 hover:rotate-y-2 hover:-translate-y-2">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-full bg-accent-purple flex items-center justify-center glow-purple">
-                  <Play className="text-white fill-current" size={20} />
-                </div>
-                <div>
-                  <h3 className="text-foreground font-bold">VALORANT PRO LEAGUE</h3>
-                  <p className="text-xs text-muted-foreground">Live Now · 2,492 Watching</p>
-                </div>
+            <div className="flex items-center space-x-6 pt-6 border-t border-white/5 w-fit">
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-background bg-muted overflow-hidden shadow-md">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`} alt="User" />
+                  </div>
+                ))}
               </div>
-              <div className="px-3 py-1 rounded bg-red-500/10 text-red-500 text-[10px] font-black uppercase tracking-widest border border-red-500/20">
-                Live
+              <div className="space-y-0.5">
+                <div className="flex items-center space-x-1 text-amber-500/80">
+                  {[1, 2, 3, 4, 5].map((s) => <Star key={s} size={10} fill="currentColor" />)}
+                </div>
+                <p className="text-[10px] md:text-[11px] text-muted-foreground uppercase tracking-widest font-bold">
+                  Trusted by <span className="text-foreground">20k+</span> Pros
+                </p>
               </div>
             </div>
-
-            <div className="aspect-video rounded-2xl bg-black/40 mb-6 overflow-hidden relative group">
-              <img
-                src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=800"
-                alt="Game"
-                className="w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700"
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 rounded-full glass flex items-center justify-center text-white scale-0 group-hover:scale-100 transition-transform duration-300">
-                  <Play className="fill-current" size={24} />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { label: "Prize Pool", value: "$5,000" },
-                { label: "Teams", value: "32/64" },
-                { label: "Tier", value: "Master" },
-              ].map((stat) => (
-                <div key={stat.label} className="bg-muted/50 rounded-xl p-3 border border-border/20">
-                  <p className="text-[10px] uppercase text-muted-foreground font-bold mb-1">{stat.label}</p>
-                  <p className="text-foreground font-black">{stat.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Floating Accents */}
-          <motion.div
-            animate={{ y: [0, -20, 0] }}
-            transition={{ repeat: Infinity, duration: 4 }}
-            className="absolute top-0 right-0 w-20 h-20 glass rounded-2xl border border-border/20 flex items-center justify-center text-accent-blue rotate-12"
-          >
-            <Trophy size={36} />
           </motion.div>
 
+          {/* Right Column: Refined Visual */}
           <motion.div
-            animate={{ y: [0, 20, 0] }}
-            transition={{ repeat: Infinity, duration: 5 }}
-            className="absolute bottom-0 left-0 w-28 h-28 glass rounded-2xl border border-border/20 p-4 -rotate-12"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.2 }}
+            className="relative hidden lg:block"
           >
-            <div className="w-full h-4 bg-muted/40 rounded mb-2" />
-            <div className="w-2/3 h-4 bg-accent-purple/20 rounded mb-4" />
-            <div className="flex items-center justify-between">
-              <div className="w-8 h-8 rounded-full bg-muted" />
-              <div className="w-12 h-6 bg-accent-blue/30 rounded" />
+            <div className="relative z-10 luxury-glass rounded-3xl p-6 xl:p-8 border border-white/10 shadow-2xl backdrop-blur-3xl bg-background/20 max-w-[480px] ml-auto overflow-hidden group">
+              {/* Decorative Glow */}
+              <div className="absolute -top-20 -right-20 w-40 h-40 bg-accent-blue/20 blur-[60px] rounded-full pointer-events-none group-hover:bg-accent-blue/30 transition-colors" />
+              
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-blue to-accent-purple flex items-center justify-center shadow-lg">
+                    <Gamepad2 className="text-white" size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground tracking-tight">FEATURED EVENT</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-accent-blue">Global Qualifiers</p>
+                  </div>
+                </div>
+                <div className="px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-widest flex items-center space-x-1.5">
+                  <span className="flex h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+                  <span>Live</span>
+                </div>
+              </div>
+
+              <div className="aspect-video rounded-2xl bg-black/40 mb-6 overflow-hidden relative group/video border border-white/5">
+                <img
+                  src="https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=800"
+                  alt="Tournament"
+                  className="w-full h-full object-cover opacity-60 group-hover/video:scale-105 transition-transform duration-[1.5s]"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full glass border border-white/20 flex items-center justify-center text-white shadow-xl backdrop-blur-md hover:scale-110 transition-transform">
+                    <Play className="fill-current ml-1" size={20} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: "Prize Pool", value: "$25,000", color: "text-amber-500" },
+                  { label: "Registered", value: "128 Teams", color: "text-accent-blue" },
+                ].map((stat) => (
+                  <div key={stat.label} className="bg-white/5 rounded-xl p-4 border border-white/5">
+                    <p className="text-[9px] uppercase text-muted-foreground font-bold tracking-widest mb-1">{stat.label}</p>
+                    <p className={`text-lg font-bold ${stat.color} tracking-tight`}>{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <button className="w-full mt-6 py-3.5 rounded-xl bg-white/5 border border-white/10 text-foreground font-bold uppercase tracking-widest text-[10px] hover:bg-white/10 transition-all flex items-center justify-center space-x-2 group/btn">
+                <span>View Details</span>
+                <ArrowUpRight size={14} className="group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-transform" />
+              </button>
             </div>
+
+            {/* Subtle floating accent */}
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+              className="absolute -top-6 -right-6 w-20 h-20 glass rounded-2xl border border-white/10 flex items-center justify-center text-accent-blue shadow-xl z-20 backdrop-blur-lg"
+            >
+              <Trophy size={32} className="opacity-80" />
+            </motion.div>
           </motion.div>
-        </motion.div>
+
         </div>
       </div>
+
+      {/* Clean Bottom Transition */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent z-30 pointer-events-none" />
     </section>
   );
 };
