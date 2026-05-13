@@ -294,8 +294,10 @@ export default function BracketView({
 
   const renderMatchCard = (match: any, matchIdx: number, roundIdx: number, totalRoundsForBracket: number, reach: number = 0) => {
     const isSkeleton = match.id && match.id.toString().includes('skeleton')
-    const isWinnerHome = match.winner_team_id && match.winner_team_id === match.home_team_id
-    const isWinnerAway = match.winner_team_id && match.winner_team_id === match.away_team_id
+    const isWinnerHome = (match.winner_team_id && match.winner_team_id === match.home_team_id) || (match.winner_player_id && match.winner_player_id === match.home_player_id)
+    const isWinnerAway = (match.winner_team_id && match.winner_team_id === match.away_team_id) || (match.winner_player_id && match.winner_player_id === match.away_player_id)
+    const isConfirmed = match.status === 'confirmed'
+    const isLive = match.status === 'in_progress'
 
     return (
       <div key={match.id} className="relative group" style={{ height: CARD_HEIGHT }}>
@@ -304,8 +306,14 @@ export default function BracketView({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: (roundIdx * 0.1) + (matchIdx * 0.05) }}
           onClick={() => isOrganizer && !isSkeleton && handleEditClick(match)}
-          className={`relative z-10 w-full h-full rounded-[1.25rem] border border-white/10 bg-card/40 backdrop-blur-xl shadow-3d hover:border-accent-blue/50 transition-all duration-500 overflow-hidden flex flex-col luxury-border-glow shimmer-glint ${isSkeleton ? 'opacity-30 grayscale' : ''} ${isOrganizer && !isSkeleton ? 'cursor-pointer hover:translate-y-[-2px]' : ''}`}
+          className={`relative z-10 w-full h-full rounded-[1.25rem] border ${isLive ? 'border-accent-blue/50 ring-1 ring-accent-blue/20' : 'border-white/10'} bg-card/40 backdrop-blur-xl shadow-3d hover:border-accent-blue/50 transition-all duration-500 overflow-hidden flex flex-col luxury-border-glow shimmer-glint ${isSkeleton ? 'opacity-30 grayscale' : ''} ${isOrganizer && !isSkeleton ? 'cursor-pointer hover:translate-y-[-2px]' : ''}`}
         >
+          {isLive && (
+            <div className="absolute top-2 left-2 flex items-center gap-1.5 z-20 bg-accent-blue/10 px-2 py-0.5 rounded-full border border-accent-blue/20">
+              <div className="h-1.5 w-1.5 rounded-full bg-accent-blue animate-pulse" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-accent-blue">Live</span>
+            </div>
+          )}
           {isOrganizer && !isSkeleton && (
             <div className="absolute top-2 right-2 p-1 rounded-md bg-accent-blue/10 opacity-0 group-hover:opacity-100 transition-opacity">
               <Edit3 size={10} className="text-accent-blue" />
@@ -313,9 +321,9 @@ export default function BracketView({
           )}
 
           {/* Home Team */}
-          <div className={`flex-1 px-4 flex items-center justify-between border-b border-white/5 transition-colors ${isWinnerHome ? 'bg-accent-blue/10' : ''}`}>
+          <div className={`flex-1 px-4 flex items-center justify-between border-b border-white/5 transition-all duration-500 ${isWinnerHome ? 'bg-emerald-500/5' : isConfirmed ? 'opacity-60' : ''}`}>
             <div className="flex items-center gap-3">
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerHome ? 'ring-2 ring-accent-blue/50' : 'bg-muted/50'}`}>
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerHome ? 'ring-2 ring-emerald-500/50' : 'bg-muted/50'}`}>
                 {match.home_team?.avatar_url ? (
                   <img src={match.home_team.avatar_url} className="w-full h-full object-cover" />
                 ) : (
@@ -326,18 +334,18 @@ export default function BracketView({
                 <span className={`text-[13px] font-black tracking-tight truncate max-w-[120px] uppercase italic ${isWinnerHome ? 'text-white' : 'text-muted-foreground'}`}>
                   {match.home_team?.name || 'TBD'}
                 </span>
-                {isWinnerHome && <span className="text-[8px] font-black text-accent-blue uppercase tracking-widest leading-none">Winner</span>}
+                {isWinnerHome && <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">Winner</span>}
               </div>
             </div>
-            <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm transition-all duration-500 ${isWinnerHome ? 'bg-accent-blue text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-black/20 text-muted-foreground'}`}>
+            <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm transition-all duration-500 ${isWinnerHome ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105' : 'bg-black/20 text-muted-foreground'}`}>
               {match.home_score ?? '-'}
             </div>
           </div>
 
           {/* Away Team */}
-          <div className={`flex-1 px-4 flex items-center justify-between transition-colors ${isWinnerAway ? 'bg-accent-blue/10' : ''}`}>
+          <div className={`flex-1 px-4 flex items-center justify-between transition-all duration-500 ${isWinnerAway ? 'bg-emerald-500/5' : isConfirmed ? 'opacity-60' : ''}`}>
             <div className="flex items-center gap-3">
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerAway ? 'ring-2 ring-accent-blue/50' : 'bg-muted/50'}`}>
+              <div className={`h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerAway ? 'ring-2 ring-emerald-500/50' : 'bg-muted/50'}`}>
                 {match.away_team?.avatar_url ? (
                   <img src={match.away_team.avatar_url} className="w-full h-full object-cover" />
                 ) : (
@@ -348,10 +356,10 @@ export default function BracketView({
                 <span className={`text-[13px] font-black tracking-tight truncate max-w-[120px] uppercase italic ${isWinnerAway ? 'text-white' : 'text-muted-foreground'}`}>
                   {match.away_team?.name || 'TBD'}
                 </span>
-                {isWinnerAway && <span className="text-[8px] font-black text-accent-blue uppercase tracking-widest leading-none">Winner</span>}
+                {isWinnerAway && <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">Winner</span>}
               </div>
             </div>
-            <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm transition-all duration-500 ${isWinnerAway ? 'bg-accent-blue text-white shadow-[0_0_15px_rgba(59,130,246,0.5)]' : 'bg-black/20 text-muted-foreground'}`}>
+            <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm transition-all duration-500 ${isWinnerAway ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105' : 'bg-black/20 text-muted-foreground'}`}>
               {match.away_score ?? '-'}
             </div>
           </div>
@@ -982,6 +990,21 @@ export default function BracketView({
                     {editGames.map((game, index) => {
                       const homeId = selectedMatch.home_team_id || selectedMatch.home_player_id
                       const awayId = selectedMatch.away_team_id || selectedMatch.away_player_id
+                      const threshold = matchFormat === 'bo5' ? 3 : matchFormat === 'bo3' ? 2 : 1
+                      
+                      // Calculate wins achieved IN PREVIOUS GAMES to determine if this game is needed
+                      let homeWinsSoFar = 0
+                      let awayWinsSoFar = 0
+                      for (let i = 0; i < index; i++) {
+                        const g = editGames[i]
+                        if (g.winner_id === homeId || g.away_forfeit) homeWinsSoFar++
+                        else if (g.winner_id === awayId || g.home_forfeit) awayWinsSoFar++
+                      }
+
+                      const isMatchAlreadyWon = homeWinsSoFar >= threshold || awayWinsSoFar >= threshold
+                      if (isMatchAlreadyWon && !editGames[index].winner_id && editGames[index].home_score === 0 && editGames[index].away_score === 0) {
+                        return null
+                      }
 
                       const updateGame = (newGameData: Partial<GameData>) => {
                         const newGames = [...editGames]
