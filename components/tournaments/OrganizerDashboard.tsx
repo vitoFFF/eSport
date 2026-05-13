@@ -23,6 +23,8 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
   const [maxRosterSize, setMaxRosterSize] = useState(5)
   const [selectedBanner, setSelectedBanner] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [matchFormat, setMatchFormat] = useState('bo1')
+  const [promotionCount, setPromotionCount] = useState(2)
 
   async function handleCreateTournament(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -228,6 +230,18 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                   { value: 'round_robin', label: 'Round Robin', emoji: '🔄' },
                   { value: 'swiss_system', label: 'Swiss System', emoji: '🇨🇭' },
                   { value: 'group_stage', label: 'Group Stage', emoji: '👥' },
+                  { value: 'hybrid', label: 'Hybrid (Group + Playoff)', emoji: '🔥' },
+                ]}
+              />
+              <ModernSelect
+                label="Match Format"
+                name="matchFormat"
+                value={matchFormat}
+                onChange={setMatchFormat}
+                options={[
+                  { value: 'bo1', label: 'Best of 1', emoji: '1️⃣' },
+                  { value: 'bo3', label: 'Best of 3', emoji: '3️⃣' },
+                  { value: 'bo5', label: 'Best of 5', emoji: '5️⃣' },
                 ]}
               />
               <ModernSelect
@@ -245,6 +259,12 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                 <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Participants</label>
                 <input name="stageParticipants" type="number" defaultValue={8} min={2} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
               </div>
+              {bracketStructure === 'hybrid' && (
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Promotion Count (Per Group)</label>
+                  <input name="promotionCount" type="number" value={promotionCount} onChange={(e) => setPromotionCount(parseInt(e.target.value) || 2)} min={1} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
+                </div>
+              )}
 
               {['single_elimination', 'double_elimination'].includes(bracketStructure) && (
                 <div className="space-y-2 col-span-2 flex items-center gap-4 mt-6 transition-all duration-300">

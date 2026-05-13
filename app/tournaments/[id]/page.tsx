@@ -7,6 +7,7 @@ import Link from 'next/link';
 import RegistrationForm from "@/components/tournament/RegistrationForm";
 import CancelRegistrationForm from "@/components/tournament/CancelRegistrationForm";
 import BracketView from "@/components/tournament/BracketView";
+import ManualSeeding from "@/components/tournament/ManualSeeding";
 
 export default async function TournamentDetailsPage({
   params,
@@ -192,47 +193,51 @@ export default async function TournamentDetailsPage({
                </div>
             </div>
 
-            {/* Confirmed Competitors Section */}
-            <div className="p-10 rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-md">
-              <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-8 flex items-center gap-2">
-                <Users size={20} className="text-accent-purple" /> Confirmed Competitors
-              </h3>
-              {registrations && registrations.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {registrations.map((reg: any) => (
-                    <Link 
-                      href={reg.team_id ? `/teams/${reg.team_id}` : "#"} 
-                      key={reg.id} 
-                      className={`p-5 rounded-2xl bg-muted/30 border border-border flex items-center gap-4 transition-all ${reg.team_id ? 'hover:border-accent-blue/50 hover:bg-muted/60 hover:translate-x-1' : ''}`}
-                    >
-                       <div className="h-14 w-14 rounded-full overflow-hidden bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center shrink-0 border border-white/5 shadow-inner">
-                          {reg.teams?.avatar_url || reg.profiles?.avatar_url ? (
-                             <img src={reg.teams?.avatar_url || reg.profiles?.avatar_url} className="w-full h-full object-cover" />
-                          ) : (
-                            <Users className="text-white/40" size={24} />
-                          )}
-                       </div>
-                       <div>
-                         <p className="font-bold text-lg leading-tight">
-                           {tournament.participation_mode === 'team' || tournament.participation_mode === 'Team NvN' 
-                             ? reg.teams?.name 
-                             : (reg.profiles?.username || reg.profiles?.full_name || 'Unknown Player')}
-                         </p>
-                         <p className="text-[11px] uppercase font-black text-emerald-500 tracking-widest mt-1.5 flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            Confirmed Entry
-                         </p>
-                       </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-20 text-center rounded-[2rem] border border-dashed border-border/50 flex flex-col items-center justify-center bg-muted/10">
-                   <Users className="text-muted-foreground/20 mb-4 h-16 w-16" />
-                   <p className="text-muted-foreground font-bold italic text-lg text-shadow-sm">The arena is empty. Be the first to register.</p>
-                </div>
-              )}
-            </div>
+            {/* Confirmed Competitors / Seeding Section */}
+            {user?.id === tournament.organizer_id && (matches || []).length === 0 ? (
+               <ManualSeeding registrations={registrations || []} tournamentId={tournament.id} />
+            ) : (
+              <div className="p-10 rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-md">
+                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-8 flex items-center gap-2">
+                  <Users size={20} className="text-accent-purple" /> Confirmed Competitors
+                </h3>
+                {registrations && registrations.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {registrations.map((reg: any) => (
+                      <Link 
+                        href={reg.team_id ? `/teams/${reg.team_id}` : "#"} 
+                        key={reg.id} 
+                        className={`p-5 rounded-2xl bg-muted/30 border border-border flex items-center gap-4 transition-all ${reg.team_id ? 'hover:border-accent-blue/50 hover:bg-muted/60 hover:translate-x-1' : ''}`}
+                      >
+                         <div className="h-14 w-14 rounded-full overflow-hidden bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center shrink-0 border border-white/5 shadow-inner">
+                            {reg.teams?.avatar_url || reg.profiles?.avatar_url ? (
+                               <img src={reg.teams?.avatar_url || reg.profiles?.avatar_url} className="w-full h-full object-cover" />
+                            ) : (
+                              <Users className="text-white/40" size={24} />
+                            )}
+                         </div>
+                         <div>
+                           <p className="font-bold text-lg leading-tight">
+                             {tournament.participation_mode === 'team' || tournament.participation_mode === 'Team NvN' 
+                               ? reg.teams?.name 
+                               : (reg.profiles?.username || reg.profiles?.full_name || 'Unknown Player')}
+                           </p>
+                           <p className="text-[11px] uppercase font-black text-emerald-500 tracking-widest mt-1.5 flex items-center gap-1.5">
+                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Confirmed Entry
+                           </p>
+                         </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="py-20 text-center rounded-[2rem] border border-dashed border-border/50 flex flex-col items-center justify-center bg-muted/10">
+                     <Users className="text-muted-foreground/20 mb-4 h-16 w-16" />
+                     <p className="text-muted-foreground font-bold italic text-lg text-shadow-sm">The arena is empty. Be the first to register.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div>

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, Trophy, Edit3, X, Check, Loader2, Sparkles, LayoutGrid } from 'lucide-react'
-import { updateMatchScore, generateBracketMatches } from '@/actions/matches'
+import { updateMatchScore, generateBracketMatches, generateNextSwissRound } from '@/actions/matches'
  
 const CARD_HEIGHT = 120
 const VERTICAL_GAP = 48
@@ -51,7 +51,11 @@ export default function BracketView({
   const [selectedMatch, setSelectedMatch] = useState<any | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingRound, setIsGeneratingRound] = useState(false)
   const [editScores, setEditScores] = useState({ home: 0, away: 0 })
+  const [isWalkover, setIsWalkover] = useState(false)
+  const [walkoverWinner, setWalkoverWinner] = useState<string | null>(null)
+  const [setScoresInput, setSetScoresInput] = useState('')
 
   // Normalize participants and matches
   const normalizedParticipants = React.useMemo(() => {
@@ -185,6 +189,9 @@ export default function BracketView({
       home: match.home_score || 0,
       away: match.away_score || 0
     })
+    setIsWalkover(match.details?.is_walkover || false)
+    setWalkoverWinner(match.details?.is_walkover ? (match.winner_team_id || match.winner_player_id) : null)
+    setSetScoresInput(match.details?.set_scores || '')
   }
 
   const handleGenerateBracket = async () => {
@@ -197,19 +204,40 @@ export default function BracketView({
     setIsGenerating(false)
   }
 
+  const handleGenerateNextRound = async () => {
+    if (!tournamentId) return
+    setIsGeneratingRound(true)
+    const res = await generateNextSwissRound(tournamentId)
+    if (res.error) {
+      alert(res.error)
+    }
+    setIsGeneratingRound(false)
+  }
+
   const handleSaveScore = async () => {
     if (!selectedMatch) return
     setIsSubmitting(true)
 
-    let winnerId = undefined
-    if (editScores.home > editScores.away) winnerId = selectedMatch.home_team_id
-    else if (editScores.away > editScores.home) winnerId = selectedMatch.away_team_id
+    let winnerId: string | null = null
+    if (isWalkover && walkoverWinner) {
+       winnerId = walkoverWinner
+       if (winnerId === selectedMatch.home_team_id || winnerId === selectedMatch.home_player_id) {
+           editScores.home = 1; editScores.away = 0;
+       } else {
+           editScores.home = 0; editScores.away = 1;
+       }
+    } else {
+       if (editScores.home > editScores.away) winnerId = selectedMatch.home_team_id || selectedMatch.home_player_id
+       else if (editScores.away > editScores.home) winnerId = selectedMatch.away_team_id || selectedMatch.away_player_id
+    }
 
     const result = await updateMatchScore(
       selectedMatch.id,
       editScores.home,
       editScores.away,
-      winnerId
+      winnerId || undefined,
+      isWalkover,
+      setScoresInput
     )
 
     if (result.success) {
@@ -645,9 +673,9 @@ export default function BracketView({
   }
 
   const renderSwissSystem = () => {
-    // Calculate standings for Swiss
+    // Calculate standings for Swiss with Buchholz
     const stats = normalizedParticipants.reduce((acc, p) => {
-      acc[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, w: 0, l: 0, pts: 0 }
+      acc[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, w: 0, l: 0, pts: 0, opponents: [], buchholz: 0 }
       return acc
     }, {} as any)
 
@@ -655,18 +683,32 @@ export default function BracketView({
       if (m.status === 'confirmed') {
         const homeId = m.home_team_id || m.home_player_id
         const awayId = m.away_team_id || m.away_player_id
-        if (!stats[homeId] || !stats[awayId]) return
-        if (m.home_score > m.away_score) {
+        if (homeId && stats[homeId] && awayId && stats[awayId]) {
+            stats[homeId].opponents.push(awayId)
+            stats[awayId].opponents.push(homeId)
+        }
+        
+        if (m.home_score > m.away_score && stats[homeId]) {
           stats[homeId].w++; stats[homeId].pts += 3
-          stats[awayId].l++
-        } else if (m.away_score > m.home_score) {
+          if (stats[awayId]) stats[awayId].l++
+        } else if (m.away_score > m.home_score && stats[awayId]) {
           stats[awayId].w++; stats[awayId].pts += 3
-          stats[homeId].l++
+          if (stats[homeId]) stats[homeId].l++
         }
       }
     })
 
-    const standings = Object.values(stats).sort((a: any, b: any) => b.pts - a.pts)
+    // Compute Buchholz score
+    Object.values(stats).forEach((team: any) => {
+        team.buchholz = team.opponents.reduce((sum: number, oppId: string) => {
+            return sum + (stats[oppId]?.pts || 0)
+        }, 0)
+    })
+
+    const standings = Object.values(stats).sort((a: any, b: any) => {
+        if (b.pts !== a.pts) return b.pts - a.pts
+        return b.buchholz - a.buchholz
+    })
 
     return (
       <div className="w-full space-y-16">
@@ -697,6 +739,7 @@ export default function BracketView({
                 <th className="px-6 py-4">Rank</th>
                 <th className="px-6 py-4">Competitor</th>
                 <th className="px-6 py-4 text-center">W-L</th>
+                <th className="px-6 py-4 text-center">Bhlz</th>
                 <th className="px-6 py-4 text-right text-accent-blue">Pts</th>
               </tr>
             </thead>
@@ -706,11 +749,26 @@ export default function BracketView({
                   <td className="px-6 py-4 font-black">{idx + 1}</td>
                   <td className="px-6 py-4 font-bold">{team.name}</td>
                   <td className="px-6 py-4 text-center text-muted-foreground">{team.w}-{team.l}</td>
+                  <td className="px-6 py-4 text-center text-amber-500 font-bold">{team.buchholz}</td>
                   <td className="px-6 py-4 text-right font-black text-accent-blue">{team.pts}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          
+          {/* Generate Next Round Button */}
+          {isOrganizer && matches.length > 0 && matches.every(m => m.status === 'confirmed') && (
+              <div className="p-6 border-t border-border flex justify-end">
+                <button 
+                  onClick={handleGenerateNextRound}
+                  disabled={isGeneratingRound}
+                  className="px-6 py-3 bg-accent-blue text-white font-bold uppercase tracking-widest text-xs rounded-xl shadow-lg shadow-accent-blue/20 hover:bg-accent-blue/90 disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isGeneratingRound ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  Generate Next Round
+                </button>
+              </div>
+          )}
         </div>
       </div>
     )
@@ -859,11 +917,11 @@ export default function BracketView({
       )}
 
       <div className={`transition-all duration-700 ${isOrganizer && matches.length === 0 ? 'blur-md opacity-30 grayscale pointer-events-none' : ''}`}>
-        {bracketStructure === 'single_elimination' && renderSingleElimination()}
+        {(bracketStructure === 'single_elimination' || bracketStructure === 'hybrid') && renderSingleElimination()}
         {bracketStructure === 'double_elimination' && renderDoubleElimination()}
         {bracketStructure === 'round_robin' && renderRoundRobin()}
         {bracketStructure === 'swiss_system' && renderSwissSystem()}
-        {bracketStructure === 'group_stage' && renderGroupStage()}
+        {(bracketStructure === 'group_stage' || bracketStructure === 'hybrid') && renderGroupStage()}
       </div>
 
       {/* Score Editor Modal */}
@@ -897,45 +955,75 @@ export default function BracketView({
               </div>
 
               <div className="space-y-6">
-                {/* Home Team Input */}
-                <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-muted/30 border border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-card flex items-center justify-center shrink-0 border border-border">
-                      {selectedMatch.home_team?.avatar_url ? (
-                        <img src={selectedMatch.home_team.avatar_url} className="w-full h-full object-cover" />
-                      ) : (
-                        <Users size={18} className="text-muted-foreground" />
-                      )}
-                    </div>
-                    <span className="font-bold truncate max-w-[150px]">{selectedMatch.home_team?.name || 'Home Team'}</span>
-                  </div>
-                  <input
-                    type="number"
-                    value={editScores.home}
-                    onChange={(e) => setEditScores({ ...editScores, home: parseInt(e.target.value) || 0 })}
-                    className="w-16 h-12 bg-card border border-border rounded-xl text-center font-black text-lg focus:ring-2 ring-accent-blue/50 outline-none transition-all"
-                  />
+                <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/30">
+                  <input type="checkbox" checked={isWalkover} onChange={(e) => setIsWalkover(e.target.checked)} className="h-5 w-5 rounded-md border-border text-accent-blue focus:ring-accent-blue" />
+                  <label className="text-sm font-bold uppercase tracking-widest">Mark as Walkover (W.O.)</label>
                 </div>
 
-                {/* Away Team Input */}
-                <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-muted/30 border border-border">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-card flex items-center justify-center shrink-0 border border-border">
-                      {selectedMatch.away_team?.avatar_url ? (
-                        <img src={selectedMatch.away_team.avatar_url} className="w-full h-full object-cover" />
-                      ) : (
-                        <Users size={18} className="text-muted-foreground" />
-                      )}
-                    </div>
-                    <span className="font-bold truncate max-w-[150px]">{selectedMatch.away_team?.name || 'Away Team'}</span>
+                {isWalkover ? (
+                  <div className="space-y-4">
+                     <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Select Winner</p>
+                     <div className="flex gap-4">
+                       <button onClick={() => setWalkoverWinner(selectedMatch.home_team_id || selectedMatch.home_player_id)} className={`flex-1 p-4 rounded-2xl border font-bold transition-all ${walkoverWinner === (selectedMatch.home_team_id || selectedMatch.home_player_id) ? 'border-accent-blue bg-accent-blue/10 text-accent-blue' : 'border-border bg-card'}`}>
+                         {selectedMatch.home_team?.name || 'Home Team'}
+                       </button>
+                       <button onClick={() => setWalkoverWinner(selectedMatch.away_team_id || selectedMatch.away_player_id)} className={`flex-1 p-4 rounded-2xl border font-bold transition-all ${walkoverWinner === (selectedMatch.away_team_id || selectedMatch.away_player_id) ? 'border-accent-blue bg-accent-blue/10 text-accent-blue' : 'border-border bg-card'}`}>
+                         {selectedMatch.away_team?.name || 'Away Team'}
+                       </button>
+                     </div>
                   </div>
-                  <input
-                    type="number"
-                    value={editScores.away}
-                    onChange={(e) => setEditScores({ ...editScores, away: parseInt(e.target.value) || 0 })}
-                    className="w-16 h-12 bg-card border border-border rounded-xl text-center font-black text-lg focus:ring-2 ring-accent-blue/50 outline-none transition-all"
-                  />
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-muted/30 border border-border">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-card flex items-center justify-center shrink-0 border border-border">
+                          {selectedMatch.home_team?.avatar_url ? (
+                            <img src={selectedMatch.home_team.avatar_url} className="w-full h-full object-cover" />
+                          ) : (
+                            <Users size={18} className="text-muted-foreground" />
+                          )}
+                        </div>
+                        <span className="font-bold truncate max-w-[150px]">{selectedMatch.home_team?.name || 'Home Team'}</span>
+                      </div>
+                      <input
+                        type="number"
+                        value={editScores.home}
+                        onChange={(e) => setEditScores({ ...editScores, home: parseInt(e.target.value) || 0 })}
+                        className="w-16 h-12 bg-card border border-border rounded-xl text-center font-black text-lg focus:ring-2 ring-accent-blue/50 outline-none transition-all"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-muted/30 border border-border">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-card flex items-center justify-center shrink-0 border border-border">
+                          {selectedMatch.away_team?.avatar_url ? (
+                            <img src={selectedMatch.away_team.avatar_url} className="w-full h-full object-cover" />
+                          ) : (
+                            <Users size={18} className="text-muted-foreground" />
+                          )}
+                        </div>
+                        <span className="font-bold truncate max-w-[150px]">{selectedMatch.away_team?.name || 'Away Team'}</span>
+                      </div>
+                      <input
+                        type="number"
+                        value={editScores.away}
+                        onChange={(e) => setEditScores({ ...editScores, away: parseInt(e.target.value) || 0 })}
+                        className="w-16 h-12 bg-card border border-border rounded-xl text-center font-black text-lg focus:ring-2 ring-accent-blue/50 outline-none transition-all"
+                      />
+                    </div>
+                    
+                    <div className="space-y-2 mt-4">
+                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Set Scores (Optional)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 16-14, 16-12"
+                        value={setScoresInput}
+                        onChange={(e) => setSetScoresInput(e.target.value)}
+                        className="w-full h-12 bg-card border border-border rounded-xl px-4 font-bold text-sm focus:ring-2 ring-accent-blue/50 outline-none transition-all"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex gap-4 pt-4">
