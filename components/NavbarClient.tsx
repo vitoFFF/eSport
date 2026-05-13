@@ -58,7 +58,7 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
             <Link
               key={link.name}
               href={link.href}
-              className={`group relative flex items-center rounded-full px-3 lg:px-4 py-2 text-sm font-bold text-muted-foreground outline-none transition-all duration-300 ${link.color}`}
+              className={`group relative flex items-center rounded-full px-3 lg:px-4 py-2 text-[15px] font-bold text-foreground outline-none transition-all duration-300 ${link.color}`}
             >
               {/* Hover Background Layer */}
               <div className={`absolute inset-0 scale-75 rounded-full opacity-0 transition-all duration-300 ease-out group-hover:scale-100 group-hover:opacity-100 dark:bg-white/5`} />
@@ -67,7 +67,7 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
               <div className={`absolute bottom-1 left-1/2 h-[3px] w-0 -translate-x-1/2 rounded-full ${link.glow} opacity-0 transition-all duration-300 ease-out group-hover:w-3/5 group-hover:opacity-100 dark:bg-white`} />
 
               <span className="relative z-10 flex items-center gap-1.5 lg:gap-2">
-                <span className="opacity-60 transition-all duration-300 group-hover:opacity-100 group-hover:text-inherit">
+                <span className="opacity-80 transition-all duration-300 group-hover:opacity-100 group-hover:text-inherit">
                   {link.icon}
                 </span>
                 <span className="tracking-wide">{link.name}</span>

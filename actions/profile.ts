@@ -320,3 +320,31 @@ export async function cancelRegistration(formData: FormData) {
   return { success: true }
 }
 
+export async function deleteTournament(tournamentId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return { error: 'Not authenticated' }
+
+  // Verify Ownership
+  const { data: tournament, error: fetchError } = await supabase
+    .from('tournaments')
+    .select('organizer_id')
+    .eq('id', tournamentId)
+    .single()
+
+  if (fetchError || !tournament) return { error: 'Tournament not found' }
+  if (tournament.organizer_id !== user.id) return { error: 'Unauthorized: You do not own this tournament.' }
+
+  const { error } = await supabase
+    .from('tournaments')
+    .delete()
+    .eq('id', tournamentId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/profile')
+  revalidatePath('/tournaments')
+  return { success: true }
+}
+

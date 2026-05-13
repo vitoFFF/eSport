@@ -7,15 +7,8 @@ import { Trophy, CreditCard, ChevronRight, Play, Gamepad2, Users, Star, ArrowUpR
 const Hero = () => {
   return (
     <section className="relative w-full min-h-[500px] md:min-h-[650px] lg:min-h-[750px] flex flex-col justify-center pt-24 pb-16 md:pt-32 md:pb-20 overflow-hidden">
-      {/* Immersive Background */}
-      <div className="absolute inset-0 z-0 bg-background">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(59,130,246,0.1),transparent)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_100%,rgba(168,85,247,0.1),transparent)]" />
-      </div>
+      <div className="absolute inset-0 z-0 bg-background" />
 
-      {/* Subtle Light Accents */}
-      <div className="absolute top-0 right-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-accent-blue/10 blur-[100px] rounded-full -z-10 animate-pulse" />
-      <div className="absolute bottom-1/4 left-1/4 w-[250px] md:w-[400px] h-[250px] md:h-[400px] bg-accent-purple/10 blur-[100px] rounded-full -z-10 animate-pulse delay-700" />
 
       <div className="container mx-auto px-6 lg:px-12 relative z-20 w-full flex-grow flex items-center">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center w-full">
@@ -84,9 +77,9 @@ const Hero = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1, delay: 0.2 }}
-            className="relative hidden lg:block"
+            className="relative hidden lg:block translate-y-12"
           >
-            <div className="relative z-10 luxury-glass rounded-3xl p-6 xl:p-8 border border-white/10 shadow-2xl backdrop-blur-3xl bg-background/20 max-w-[480px] ml-auto overflow-hidden group">
+            <div className="relative z-10 luxury-glass rounded-3xl p-6 xl:p-8 border border-white/10 shadow-2xl backdrop-blur-3xl bg-card max-w-[480px] ml-auto overflow-hidden group">
               {/* Decorative Glow */}
               <div className="absolute -top-20 -right-20 w-40 h-40 bg-accent-blue/20 blur-[60px] rounded-full pointer-events-none group-hover:bg-accent-blue/30 transition-colors" />
               
@@ -150,8 +143,6 @@ const Hero = () => {
         </div>
       </div>
 
-      {/* Clean Bottom Transition */}
-      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent z-30 pointer-events-none" />
     </section>
   );
 };

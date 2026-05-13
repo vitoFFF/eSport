@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Trophy, Plus, Settings, BarChart3, Image as ImageIcon, Layout, FileText, Share2, Gamepad2, Trophy as TrophyIcon, Users, User, GitFork, Shuffle, TrendingUp, Edit3, Upload, Sparkles, Wand2 } from 'lucide-react'
+import { Trophy, Plus, Settings, BarChart3, Image as ImageIcon, Layout, FileText, Share2, Gamepad2, Trophy as TrophyIcon, Users, User, GitFork, Shuffle, TrendingUp, Edit3, Upload, Sparkles, Wand2, Trash2, X } from 'lucide-react'
 import Link from 'next/link'
-import { createTournament } from '@/actions/profile'
+import { useRouter } from 'next/navigation'
+import { createTournament, deleteTournament } from '@/actions/profile'
 import ModernSelect from '@/components/ui/ModernSelect'
 
 interface OrganizerDashboardProps {
@@ -25,6 +26,8 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
   const [isGenerating, setIsGenerating] = useState(false)
   const [matchFormat, setMatchFormat] = useState('bo1')
   const [promotionCount, setPromotionCount] = useState(2)
+  const [showDeleteId, setShowDeleteId] = useState<string | null>(null)
+  const router = useRouter()
 
   async function handleCreateTournament(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -39,6 +42,20 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
     else {
       setMessage({ type: 'success', text: 'Tournament created successfully!' })
       setActiveTab('tournaments')
+    }
+    setLoading(false)
+  }
+  
+  async function handleDeleteTournament(id: string) {
+    // We could use a more fancy confirmation, but window.confirm is clear for now
+    if (!confirm('Are you sure you want to delete this tournament?')) return
+    
+    setLoading(true)
+    const result = await deleteTournament(id)
+    if (result.error) setMessage({ type: 'error', text: result.error })
+    else {
+      setMessage({ type: 'success', text: 'Tournament deleted successfully!' })
+      setShowDeleteId(null)
     }
     setLoading(false)
   }
@@ -103,7 +120,11 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
       {activeTab === 'tournaments' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {tournaments?.length > 0 ? tournaments.map((t) => (
-            <div key={t.id} className="group relative overflow-hidden rounded-[2rem] border border-border bg-card hover:border-accent-blue/50 transition-all duration-300 shadow-lg hover:shadow-accent-blue/5">
+            <div 
+              key={t.id} 
+              onClick={() => router.push(`/tournaments/${t.id}`)}
+              className="group relative overflow-hidden rounded-[2rem] border border-border bg-card hover:border-accent-blue/50 transition-all duration-300 shadow-lg hover:shadow-accent-blue/5 cursor-pointer"
+            >
               <div className="aspect-[21/9] bg-muted relative">
                 {t.banner_url ? (
                   <img src={t.banner_url} alt={t.name} className="w-full h-full object-cover" />
@@ -132,15 +153,47 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                     <p className="text-sm font-black">{t.prize_pool || 'N/A'}</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center hover:bg-card transition-all">
-                    <Settings size={16} />
-                  </button>
-                  <Link href={`/tournaments/${t.id}`}>
-                    <button className="px-5 py-2 rounded-xl bg-foreground text-background text-xs font-black uppercase tracking-widest hover:scale-105 transition-all">
-                      Dashboard
-                    </button>
-                  </Link>
+                <div className="flex gap-2 relative z-20">
+                  {showDeleteId === t.id ? (
+                    <>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteTournament(t.id)
+                        }}
+                        className="h-10 px-4 rounded-xl bg-red-500 text-white flex items-center gap-2 hover:bg-red-600 transition-all text-[10px] font-black uppercase tracking-widest"
+                      >
+                        <Trash2 size={16} />
+                        Confirm
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowDeleteId(null)
+                        }}
+                        className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center hover:bg-card transition-all"
+                      >
+                        <X size={16} />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowDeleteId(t.id)
+                        }}
+                        className="h-10 w-10 rounded-xl bg-muted border border-border flex items-center justify-center hover:bg-card transition-all"
+                      >
+                        <Settings size={16} />
+                      </button>
+                      <Link href={`/tournaments/${t.id}`} onClick={(e) => e.stopPropagation()}>
+                        <button className="px-5 py-2 rounded-xl bg-foreground text-background text-xs font-black uppercase tracking-widest hover:scale-105 transition-all">
+                          Dashboard
+                        </button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
