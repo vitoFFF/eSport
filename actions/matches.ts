@@ -84,37 +84,46 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
   const { data: tournament } = await supabase.from('tournaments').select('organizer_id, bracket_structure, settings, third_place_match').eq('id', match.tournament_id).single()
   if (!tournament || tournament.organizer_id !== user.id) return { error: 'Not authorized' }
 
+  // 1. Define the Win Threshold
   const participantsCount = Number(tournament.settings?.stage_participants_count) || 8
-  const format = (tournament.settings?.match_format || 'bo1').toLowerCase()
-  const threshold = format === 'bo5' ? 3 : format === 'bo3' ? 2 : 1
+  const settings = tournament.settings || {}
+  const matchFormat = (settings.match_format || settings.matchFormat || 'bo1').toString().toLowerCase()
+  const threshold = matchFormat.includes('5') ? 3 : matchFormat.includes('3') ? 2 : 1
+  
+  console.log(`[ScoreUpdate] Match ${matchId} | Format: ${matchFormat} | Threshold: ${threshold}`)
 
-  let homeScore = 0;
-  let awayScore = 0;
+  // 2. Count Actual Wins
+  let homeWins = 0;
+  let awayWins = 0;
 
   if (isWalkover && walkoverWinner) {
       if (walkoverWinner === match.home_team_id || walkoverWinner === match.home_player_id) {
-          homeScore = 1; awayScore = 0;
+          homeWins = threshold; awayWins = 0;
       } else {
-          homeScore = 0; awayScore = 1;
+          homeWins = 0; awayWins = threshold;
       }
   } else {
       games.forEach(game => {
-          if (game.home_forfeit) {
-              awayScore++;
+          const homeId = match.home_team_id || match.home_player_id
+          const awayId = match.away_team_id || match.away_player_id
+          
+          if (game.winner_id === homeId) {
+              homeWins++;
+          } else if (game.winner_id === awayId) {
+              awayWins++;
+          } else if (game.home_forfeit) {
+              awayWins++;
           } else if (game.away_forfeit) {
-              homeScore++;
-          } else if (game.winner_id === match.home_team_id || game.winner_id === match.home_player_id) {
-              homeScore++;
-          } else if (game.winner_id === match.away_team_id || game.winner_id === match.away_player_id) {
-              awayScore++;
+              homeWins++;
           }
       });
   }
 
-  // Validation & Finish Condition
-  const isFinished = isWalkover || Math.max(homeScore, awayScore) >= threshold;
+  // 3. Strict Completion Rule
+  const isCompleted = isWalkover || homeWins >= threshold || awayWins >= threshold;
+  console.log(`[ScoreUpdate] Home Wins: ${homeWins} | Away Wins: ${awayWins} | Completed: ${isCompleted}`)
 
-  if (isFinished && !isWalkover && homeScore === awayScore && tournament.bracket_structure !== 'round_robin' && tournament.bracket_structure !== 'group_stage' && tournament.bracket_structure !== 'swiss_system') {
+  if (isCompleted && !isWalkover && homeWins === awayWins && !['round_robin', 'group_stage', 'swiss_system'].includes(tournament.bracket_structure)) {
       return { error: 'Elimination matches cannot end in a draw.' }
   }
 
@@ -122,40 +131,32 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
   let winnerTeamId = null
   let winnerPlayerId = null
 
-  if (isFinished) {
-      if (isWalkover && walkoverWinner) {
-        if (walkoverWinner === match.home_team_id || walkoverWinner === match.home_player_id) {
-           winnerTeamId = match.home_team_id; winnerPlayerId = match.home_player_id;
-        } else if (walkoverWinner === match.away_team_id || walkoverWinner === match.away_player_id) {
-           winnerTeamId = match.away_team_id; winnerPlayerId = match.away_player_id;
-        }
-      } else {
-        if (homeScore > awayScore) {
-          winnerTeamId = match.home_team_id
-          winnerPlayerId = match.home_player_id
-        } else if (awayScore > homeScore) {
-          winnerTeamId = match.away_team_id
-          winnerPlayerId = match.away_player_id
-        }
+  if (isCompleted) {
+      if (homeWins > awayWins) {
+        winnerTeamId = match.home_team_id
+        winnerPlayerId = match.home_player_id
+      } else if (awayWins > homeWins) {
+        winnerTeamId = match.away_team_id
+        winnerPlayerId = match.away_player_id
       }
   }
 
   const { error } = await supabase
     .from('matches')
     .update({
-      home_score: homeScore,
-      away_score: awayScore,
+      home_score: homeWins,
+      away_score: awayWins,
       winner_team_id: winnerTeamId,
       winner_player_id: winnerPlayerId,
-      status: isFinished ? 'confirmed' : 'in_progress',
+      status: isCompleted ? 'confirmed' : 'in_progress',
       details: { ...match.details, is_walkover: isWalkover, games: games }
     })
     .eq('id', matchId)
 
   if (error) return { error: error.message }
 
-  // Progression logic
-  if (isFinished && (winnerTeamId || winnerPlayerId)) {
+  // 4. Bracket Update (Progression Logic)
+  if (isCompleted && (winnerTeamId || winnerPlayerId)) {
     const isDoubleElim = tournament.bracket_structure === 'double_elimination'
     const isSingleElim = tournament.bracket_structure === 'single_elimination' || tournament.bracket_structure === 'hybrid'
     const isElimination = isDoubleElim || isSingleElim;
