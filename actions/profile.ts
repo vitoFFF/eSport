@@ -262,6 +262,20 @@ export async function registerForTournament(formData: FormData) {
     status: 'registered'
   }
 
+  // Check Participant Limit
+  const { data: tournament } = await supabase.from('tournaments').select('settings').eq('id', tournamentId).single()
+  const maxParticipants = tournament?.settings?.stage_participants_count ? parseInt(tournament.settings.stage_participants_count) : 8
+
+  const { count } = await supabase
+    .from('tournament_registrations')
+    .select('*', { count: 'exact', head: true })
+    .eq('tournament_id', tournamentId)
+    .eq('status', 'registered')
+
+  if (count !== null && count >= maxParticipants) {
+    return { error: 'Registration closed: Participant limit reached.' }
+  }
+
   if (mode === 'Team NvN' || mode === 'team') {
     if (!teamId) return { error: 'A team selection is required for team tournaments.' }
     payload.team_id = teamId

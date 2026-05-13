@@ -79,11 +79,12 @@ export async function updateMatchScore(matchId: string, homeScore: number, awayS
   const matchFormat = tournament.settings?.match_format || 'bo1'
 
   // Validation
+  let isFinished = true;
   if (!isWalkover) {
     const maxScore = Math.max(homeScore, awayScore);
-    if (matchFormat === 'bo3' && maxScore < 2) return { error: 'BO3 requires 2 wins.' }
-    if (matchFormat === 'bo5' && maxScore < 3) return { error: 'BO5 requires 3 wins.' }
-    if (homeScore === awayScore && tournament.bracket_structure !== 'round_robin' && tournament.bracket_structure !== 'group_stage' && tournament.bracket_structure !== 'swiss_system') {
+    if (matchFormat === 'bo3' && maxScore < 2) isFinished = false;
+    if (matchFormat === 'bo5' && maxScore < 3) isFinished = false;
+    if (isFinished && homeScore === awayScore && tournament.bracket_structure !== 'round_robin' && tournament.bracket_structure !== 'group_stage' && tournament.bracket_structure !== 'swiss_system') {
       return { error: 'Elimination matches cannot end in a draw.' }
     }
   }
@@ -92,20 +93,22 @@ export async function updateMatchScore(matchId: string, homeScore: number, awayS
   let winnerTeamId = null
   let winnerPlayerId = null
 
-  if (isWalkover && winnerId) {
-    if (winnerId === match.home_team_id || winnerId === match.home_player_id) {
-       winnerTeamId = match.home_team_id; winnerPlayerId = match.home_player_id;
-    } else if (winnerId === match.away_team_id || winnerId === match.away_player_id) {
-       winnerTeamId = match.away_team_id; winnerPlayerId = match.away_player_id;
-    }
-  } else {
-    if (homeScore > awayScore) {
-      winnerTeamId = match.home_team_id
-      winnerPlayerId = match.home_player_id
-    } else if (awayScore > homeScore) {
-      winnerTeamId = match.away_team_id
-      winnerPlayerId = match.away_player_id
-    }
+  if (isFinished) {
+      if (isWalkover && winnerId) {
+        if (winnerId === match.home_team_id || winnerId === match.home_player_id) {
+           winnerTeamId = match.home_team_id; winnerPlayerId = match.home_player_id;
+        } else if (winnerId === match.away_team_id || winnerId === match.away_player_id) {
+           winnerTeamId = match.away_team_id; winnerPlayerId = match.away_player_id;
+        }
+      } else {
+        if (homeScore > awayScore) {
+          winnerTeamId = match.home_team_id
+          winnerPlayerId = match.home_player_id
+        } else if (awayScore > homeScore) {
+          winnerTeamId = match.away_team_id
+          winnerPlayerId = match.away_player_id
+        }
+      }
   }
 
   const { error } = await supabase
@@ -115,7 +118,7 @@ export async function updateMatchScore(matchId: string, homeScore: number, awayS
       away_score: awayScore,
       winner_team_id: winnerTeamId,
       winner_player_id: winnerPlayerId,
-      status: 'confirmed',
+      status: isFinished ? 'confirmed' : 'in_progress',
       details: { ...match.details, is_walkover: isWalkover, set_scores: setScores }
     })
     .eq('id', matchId)
@@ -123,7 +126,7 @@ export async function updateMatchScore(matchId: string, homeScore: number, awayS
   if (error) return { error: error.message }
 
   // Progression logic
-  if (winnerTeamId || winnerPlayerId) {
+  if (isFinished && (winnerTeamId || winnerPlayerId)) {
     const isDoubleElim = tournament.bracket_structure === 'double_elimination'
     const isSingleElim = tournament.bracket_structure === 'single_elimination' || tournament.bracket_structure === 'hybrid'
     const isElimination = isDoubleElim || isSingleElim;
@@ -284,10 +287,10 @@ export async function generateBracketMatches(tournamentId: string) {
     const rounds = Math.log2(powerOfTwo)
     const byes = powerOfTwo - participantsCount
 
-    const bracketParticipants = new Array(powerOfTwo).fill(null)
+    const bracketParticipants = new Array(powerOfTwo).fill(undefined)
     for (let i = 0; i < byes; i++) {
         bracketParticipants[i * 2] = registrations[i]
-        bracketParticipants[i * 2 + 1] = null
+        bracketParticipants[i * 2 + 1] = null // null means BYE
     }
     let regIndex = byes;
     for (let i = 0; i < powerOfTwo; i++) {
