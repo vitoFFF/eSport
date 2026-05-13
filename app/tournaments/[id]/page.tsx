@@ -314,6 +314,7 @@ export default async function TournamentDetailsPage({
                         isOrganizer={user?.id === tournament.organizer_id}
                         tournamentId={tournament.id}
                         bracketStructure={tournament.bracket_structure}
+                        matchFormat={tournament.settings?.match_format || 'bo1'}
                     />
                 </div>
             </div>

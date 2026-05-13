@@ -63,7 +63,16 @@ export async function disputeScore(matchId: string) {
   return { success: true }
 }
 
-export async function updateMatchScore(matchId: string, homeScore: number, awayScore: number, winnerId?: string, isWalkover: boolean = false, setScores: string = '') {
+export interface GameData {
+  game_id: number;
+  home_score: number;
+  away_score: number;
+  winner_id: string | null;
+  home_forfeit: boolean;
+  away_forfeit: boolean;
+}
+
+export async function updateMatchScore(matchId: string, games: GameData[], isWalkover: boolean = false, walkoverWinner?: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -77,6 +86,29 @@ export async function updateMatchScore(matchId: string, homeScore: number, awayS
 
   const participantsCount = Number(tournament.settings?.stage_participants_count) || 8
   const matchFormat = tournament.settings?.match_format || 'bo1'
+
+  let homeScore = 0;
+  let awayScore = 0;
+
+  if (isWalkover && walkoverWinner) {
+      if (walkoverWinner === match.home_team_id || walkoverWinner === match.home_player_id) {
+          homeScore = 1; awayScore = 0;
+      } else {
+          homeScore = 0; awayScore = 1;
+      }
+  } else {
+      games.forEach(game => {
+          if (game.home_forfeit) {
+              awayScore++;
+          } else if (game.away_forfeit) {
+              homeScore++;
+          } else if (game.winner_id === match.home_team_id || game.winner_id === match.home_player_id) {
+              homeScore++;
+          } else if (game.winner_id === match.away_team_id || game.winner_id === match.away_player_id) {
+              awayScore++;
+          }
+      });
+  }
 
   // Validation
   let isFinished = true;
@@ -94,10 +126,10 @@ export async function updateMatchScore(matchId: string, homeScore: number, awayS
   let winnerPlayerId = null
 
   if (isFinished) {
-      if (isWalkover && winnerId) {
-        if (winnerId === match.home_team_id || winnerId === match.home_player_id) {
+      if (isWalkover && walkoverWinner) {
+        if (walkoverWinner === match.home_team_id || walkoverWinner === match.home_player_id) {
            winnerTeamId = match.home_team_id; winnerPlayerId = match.home_player_id;
-        } else if (winnerId === match.away_team_id || winnerId === match.away_player_id) {
+        } else if (walkoverWinner === match.away_team_id || walkoverWinner === match.away_player_id) {
            winnerTeamId = match.away_team_id; winnerPlayerId = match.away_player_id;
         }
       } else {
@@ -119,7 +151,7 @@ export async function updateMatchScore(matchId: string, homeScore: number, awayS
       winner_team_id: winnerTeamId,
       winner_player_id: winnerPlayerId,
       status: isFinished ? 'confirmed' : 'in_progress',
-      details: { ...match.details, is_walkover: isWalkover, set_scores: setScores }
+      details: { ...match.details, is_walkover: isWalkover, games: games }
     })
     .eq('id', matchId)
 
@@ -454,7 +486,7 @@ export async function generateBracketMatches(tournamentId: string) {
   if (insertedMatches) {
       for (const m of insertedMatches) {
           if (m.details?.is_walkover && (structure === 'single_elimination' || structure === 'double_elimination')) {
-              await updateMatchScore(m.id, 1, 0, m.winner_team_id || m.winner_player_id, true);
+              await updateMatchScore(m.id, [], true, m.winner_team_id || m.winner_player_id);
           }
       }
   }

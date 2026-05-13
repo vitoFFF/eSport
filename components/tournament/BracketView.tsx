@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, Trophy, Edit3, X, Check, Loader2, Sparkles, LayoutGrid } from 'lucide-react'
-import { updateMatchScore, generateBracketMatches, generateNextSwissRound } from '@/actions/matches'
+import { updateMatchScore, generateBracketMatches, generateNextSwissRound, GameData } from '@/actions/matches'
  
 const CARD_HEIGHT = 120
 const VERTICAL_GAP = 48
@@ -30,6 +30,7 @@ interface BracketViewProps {
   isOrganizer?: boolean
   tournamentId?: string
   bracketStructure?: string
+  matchFormat?: string
 }
 
 const getRoundName = (roundIdx: number, totalRounds: number) => {
@@ -46,16 +47,16 @@ export default function BracketView({
   totalParticipants = 8,
   isOrganizer = false,
   tournamentId,
-  bracketStructure = 'single_elimination'
+  bracketStructure = 'single_elimination',
+  matchFormat = 'bo1'
 }: BracketViewProps) {
   const [selectedMatch, setSelectedMatch] = useState<any | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [isGeneratingRound, setIsGeneratingRound] = useState(false)
-  const [editScores, setEditScores] = useState({ home: 0, away: 0 })
+  const [editGames, setEditGames] = useState<GameData[]>([])
   const [isWalkover, setIsWalkover] = useState(false)
   const [walkoverWinner, setWalkoverWinner] = useState<string | null>(null)
-  const [setScoresInput, setSetScoresInput] = useState('')
 
   // Normalize participants and matches
   const normalizedParticipants = React.useMemo(() => {
@@ -185,13 +186,27 @@ export default function BracketView({
   const handleEditClick = (match: any) => {
     if (match.id && match.id.toString().includes('skeleton')) return
     setSelectedMatch(match)
-    setEditScores({
-      home: match.home_score || 0,
-      away: match.away_score || 0
+    
+    let gamesCount = 1
+    if (matchFormat === 'bo3') gamesCount = 3
+    if (matchFormat === 'bo5') gamesCount = 5
+
+    const existingGames = match.details?.games || []
+    const games: GameData[] = Array.from({ length: gamesCount }).map((_, i) => {
+      if (existingGames[i]) return existingGames[i]
+      return {
+        game_id: i + 1,
+        home_score: 0,
+        away_score: 0,
+        winner_id: null,
+        home_forfeit: false,
+        away_forfeit: false
+      }
     })
+
+    setEditGames(games)
     setIsWalkover(match.details?.is_walkover || false)
     setWalkoverWinner(match.details?.is_walkover ? (match.winner_team_id || match.winner_player_id) : null)
-    setSetScoresInput(match.details?.set_scores || '')
   }
 
   const handleGenerateBracket = async () => {
@@ -221,23 +236,13 @@ export default function BracketView({
     let winnerId: string | null = null
     if (isWalkover && walkoverWinner) {
        winnerId = walkoverWinner
-       if (winnerId === selectedMatch.home_team_id || winnerId === selectedMatch.home_player_id) {
-           editScores.home = 1; editScores.away = 0;
-       } else {
-           editScores.home = 0; editScores.away = 1;
-       }
-    } else {
-       if (editScores.home > editScores.away) winnerId = selectedMatch.home_team_id || selectedMatch.home_player_id
-       else if (editScores.away > editScores.home) winnerId = selectedMatch.away_team_id || selectedMatch.away_player_id
     }
 
     const result = await updateMatchScore(
       selectedMatch.id,
-      editScores.home,
-      editScores.away,
-      winnerId || undefined,
+      editGames,
       isWalkover,
-      setScoresInput
+      winnerId || undefined
     )
 
     if (result.success) {
@@ -973,56 +978,126 @@ export default function BracketView({
                      </div>
                   </div>
                 ) : (
-                  <>
-                    <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-muted/30 border border-border">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-card flex items-center justify-center shrink-0 border border-border">
-                          {selectedMatch.home_team?.avatar_url ? (
-                            <img src={selectedMatch.home_team.avatar_url} className="w-full h-full object-cover" />
-                          ) : (
-                            <Users size={18} className="text-muted-foreground" />
-                          )}
-                        </div>
-                        <span className="font-bold truncate max-w-[150px]">{selectedMatch.home_team?.name || 'Home Team'}</span>
-                      </div>
-                      <input
-                        type="number"
-                        value={editScores.home}
-                        onChange={(e) => setEditScores({ ...editScores, home: parseInt(e.target.value) || 0 })}
-                        className="w-16 h-12 bg-card border border-border rounded-xl text-center font-black text-lg focus:ring-2 ring-accent-blue/50 outline-none transition-all"
-                      />
-                    </div>
+                  <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                    {editGames.map((game, index) => {
+                      const homeId = selectedMatch.home_team_id || selectedMatch.home_player_id
+                      const awayId = selectedMatch.away_team_id || selectedMatch.away_player_id
 
-                    <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-muted/30 border border-border">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-card flex items-center justify-center shrink-0 border border-border">
-                          {selectedMatch.away_team?.avatar_url ? (
-                            <img src={selectedMatch.away_team.avatar_url} className="w-full h-full object-cover" />
-                          ) : (
-                            <Users size={18} className="text-muted-foreground" />
-                          )}
+                      const updateGame = (newGameData: Partial<GameData>) => {
+                        const newGames = [...editGames]
+                        newGames[index] = { ...newGames[index], ...newGameData }
+                        setEditGames(newGames)
+                      }
+
+                      return (
+                        <div key={index} className="p-4 rounded-2xl bg-muted/30 border border-border space-y-4 relative">
+                          <div className="absolute -top-3 left-4 bg-card px-2 text-[10px] font-black uppercase tracking-widest text-accent-blue border border-border rounded-full">
+                            Game {index + 1}
+                          </div>
+                          
+                          {/* Home Row */}
+                          <div className="flex items-center justify-between gap-3 pt-2">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className="h-8 w-8 rounded-lg bg-card flex items-center justify-center shrink-0 border border-border overflow-hidden">
+                                {selectedMatch.home_team?.avatar_url ? (
+                                  <img src={selectedMatch.home_team.avatar_url} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Users size={14} className="text-muted-foreground" />
+                                )}
+                              </div>
+                              <span className="font-bold text-sm truncate">{selectedMatch.home_team?.name || 'Home Team'}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <label className="flex items-center gap-1 text-[10px] uppercase font-bold text-muted-foreground mr-2 cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  checked={game.home_forfeit}
+                                  onChange={(e) => updateGame({ home_forfeit: e.target.checked, winner_id: e.target.checked ? awayId : null })}
+                                  className="h-3 w-3 rounded-sm text-red-500" 
+                                />
+                                FF
+                              </label>
+
+                              <input
+                                type="number"
+                                value={game.home_score}
+                                onChange={(e) => updateGame({ home_score: parseInt(e.target.value) || 0 })}
+                                className="w-12 h-8 bg-card border border-border rounded-lg text-center font-black text-sm focus:ring-1 ring-accent-blue/50 outline-none"
+                              />
+
+                              <div className="flex bg-card rounded-lg border border-border overflow-hidden h-8">
+                                <button 
+                                  onClick={() => updateGame({ winner_id: homeId, home_forfeit: false, away_forfeit: false })}
+                                  className={`px-2 text-xs font-black transition-colors ${game.winner_id === homeId ? 'bg-emerald-500/20 text-emerald-500' : 'hover:bg-muted text-muted-foreground'}`}
+                                >W</button>
+                                <div className="w-px bg-border"></div>
+                                <button 
+                                  onClick={() => updateGame({ winner_id: 'draw', home_forfeit: false, away_forfeit: false })}
+                                  className={`px-2 text-xs font-black transition-colors ${game.winner_id === 'draw' ? 'bg-amber-500/20 text-amber-500' : 'hover:bg-muted text-muted-foreground'}`}
+                                >D</button>
+                                <div className="w-px bg-border"></div>
+                                <button 
+                                  onClick={() => updateGame({ winner_id: awayId, home_forfeit: false, away_forfeit: false })}
+                                  className={`px-2 text-xs font-black transition-colors ${game.winner_id === awayId ? 'bg-red-500/20 text-red-500' : 'hover:bg-muted text-muted-foreground'}`}
+                                >L</button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Away Row */}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className="h-8 w-8 rounded-lg bg-card flex items-center justify-center shrink-0 border border-border overflow-hidden">
+                                {selectedMatch.away_team?.avatar_url ? (
+                                  <img src={selectedMatch.away_team.avatar_url} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Users size={14} className="text-muted-foreground" />
+                                )}
+                              </div>
+                              <span className="font-bold text-sm truncate">{selectedMatch.away_team?.name || 'Away Team'}</span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <label className="flex items-center gap-1 text-[10px] uppercase font-bold text-muted-foreground mr-2 cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  checked={game.away_forfeit}
+                                  onChange={(e) => updateGame({ away_forfeit: e.target.checked, winner_id: e.target.checked ? homeId : null })}
+                                  className="h-3 w-3 rounded-sm text-red-500" 
+                                />
+                                FF
+                              </label>
+
+                              <input
+                                type="number"
+                                value={game.away_score}
+                                onChange={(e) => updateGame({ away_score: parseInt(e.target.value) || 0 })}
+                                className="w-12 h-8 bg-card border border-border rounded-lg text-center font-black text-sm focus:ring-1 ring-accent-blue/50 outline-none"
+                              />
+
+                              <div className="flex bg-card rounded-lg border border-border overflow-hidden h-8">
+                                <button 
+                                  onClick={() => updateGame({ winner_id: awayId, home_forfeit: false, away_forfeit: false })}
+                                  className={`px-2 text-xs font-black transition-colors ${game.winner_id === awayId ? 'bg-emerald-500/20 text-emerald-500' : 'hover:bg-muted text-muted-foreground'}`}
+                                >W</button>
+                                <div className="w-px bg-border"></div>
+                                <button 
+                                  onClick={() => updateGame({ winner_id: 'draw', home_forfeit: false, away_forfeit: false })}
+                                  className={`px-2 text-xs font-black transition-colors ${game.winner_id === 'draw' ? 'bg-amber-500/20 text-amber-500' : 'hover:bg-muted text-muted-foreground'}`}
+                                >D</button>
+                                <div className="w-px bg-border"></div>
+                                <button 
+                                  onClick={() => updateGame({ winner_id: homeId, home_forfeit: false, away_forfeit: false })}
+                                  className={`px-2 text-xs font-black transition-colors ${game.winner_id === homeId ? 'bg-red-500/20 text-red-500' : 'hover:bg-muted text-muted-foreground'}`}
+                                >L</button>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <span className="font-bold truncate max-w-[150px]">{selectedMatch.away_team?.name || 'Away Team'}</span>
-                      </div>
-                      <input
-                        type="number"
-                        value={editScores.away}
-                        onChange={(e) => setEditScores({ ...editScores, away: parseInt(e.target.value) || 0 })}
-                        className="w-16 h-12 bg-card border border-border rounded-xl text-center font-black text-lg focus:ring-2 ring-accent-blue/50 outline-none transition-all"
-                      />
-                    </div>
-                    
-                    <div className="space-y-2 mt-4">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Set Scores (Optional)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 16-14, 16-12"
-                        value={setScoresInput}
-                        onChange={(e) => setSetScoresInput(e.target.value)}
-                        className="w-full h-12 bg-card border border-border rounded-xl px-4 font-bold text-sm focus:ring-2 ring-accent-blue/50 outline-none transition-all"
-                      />
-                    </div>
-                  </>
+                      )
+                    })}
+                  </div>
                 )}
               </div>
 
