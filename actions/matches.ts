@@ -85,7 +85,8 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
   if (!tournament || tournament.organizer_id !== user.id) return { error: 'Not authorized' }
 
   const participantsCount = Number(tournament.settings?.stage_participants_count) || 8
-  const matchFormat = tournament.settings?.match_format || 'bo1'
+  const format = (tournament.settings?.match_format || 'bo1').toLowerCase()
+  const threshold = format === 'bo5' ? 3 : format === 'bo3' ? 2 : 1
 
   let homeScore = 0;
   let awayScore = 0;
@@ -110,15 +111,11 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
       });
   }
 
-  // Validation
-  let isFinished = true;
-  if (!isWalkover) {
-    const maxScore = Math.max(homeScore, awayScore);
-    if (matchFormat === 'bo3' && maxScore < 2) isFinished = false;
-    if (matchFormat === 'bo5' && maxScore < 3) isFinished = false;
-    if (isFinished && homeScore === awayScore && tournament.bracket_structure !== 'round_robin' && tournament.bracket_structure !== 'group_stage' && tournament.bracket_structure !== 'swiss_system') {
+  // Validation & Finish Condition
+  const isFinished = isWalkover || Math.max(homeScore, awayScore) >= threshold;
+
+  if (isFinished && !isWalkover && homeScore === awayScore && tournament.bracket_structure !== 'round_robin' && tournament.bracket_structure !== 'group_stage' && tournament.bracket_structure !== 'swiss_system') {
       return { error: 'Elimination matches cannot end in a draw.' }
-    }
   }
 
   // Determine winner IDs based on score

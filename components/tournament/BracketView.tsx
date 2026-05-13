@@ -1028,17 +1028,17 @@ export default function BracketView({
 
                               <div className="flex bg-card rounded-lg border border-border overflow-hidden h-8">
                                 <button 
-                                  onClick={() => updateGame({ winner_id: homeId, home_forfeit: false, away_forfeit: false })}
+                                  onClick={() => updateGame({ winner_id: game.winner_id === homeId ? null : homeId, home_forfeit: false, away_forfeit: false })}
                                   className={`px-2 text-xs font-black transition-colors ${game.winner_id === homeId ? 'bg-emerald-500/20 text-emerald-500' : 'hover:bg-muted text-muted-foreground'}`}
                                 >W</button>
                                 <div className="w-px bg-border"></div>
                                 <button 
-                                  onClick={() => updateGame({ winner_id: 'draw', home_forfeit: false, away_forfeit: false })}
+                                  onClick={() => updateGame({ winner_id: game.winner_id === 'draw' ? null : 'draw', home_forfeit: false, away_forfeit: false })}
                                   className={`px-2 text-xs font-black transition-colors ${game.winner_id === 'draw' ? 'bg-amber-500/20 text-amber-500' : 'hover:bg-muted text-muted-foreground'}`}
                                 >D</button>
                                 <div className="w-px bg-border"></div>
                                 <button 
-                                  onClick={() => updateGame({ winner_id: awayId, home_forfeit: false, away_forfeit: false })}
+                                  onClick={() => updateGame({ winner_id: game.winner_id === awayId ? null : awayId, home_forfeit: false, away_forfeit: false })}
                                   className={`px-2 text-xs font-black transition-colors ${game.winner_id === awayId ? 'bg-red-500/20 text-red-500' : 'hover:bg-muted text-muted-foreground'}`}
                                 >L</button>
                               </div>
@@ -1078,17 +1078,17 @@ export default function BracketView({
 
                               <div className="flex bg-card rounded-lg border border-border overflow-hidden h-8">
                                 <button 
-                                  onClick={() => updateGame({ winner_id: awayId, home_forfeit: false, away_forfeit: false })}
+                                  onClick={() => updateGame({ winner_id: game.winner_id === awayId ? null : awayId, home_forfeit: false, away_forfeit: false })}
                                   className={`px-2 text-xs font-black transition-colors ${game.winner_id === awayId ? 'bg-emerald-500/20 text-emerald-500' : 'hover:bg-muted text-muted-foreground'}`}
                                 >W</button>
                                 <div className="w-px bg-border"></div>
                                 <button 
-                                  onClick={() => updateGame({ winner_id: 'draw', home_forfeit: false, away_forfeit: false })}
+                                  onClick={() => updateGame({ winner_id: game.winner_id === 'draw' ? null : 'draw', home_forfeit: false, away_forfeit: false })}
                                   className={`px-2 text-xs font-black transition-colors ${game.winner_id === 'draw' ? 'bg-amber-500/20 text-amber-500' : 'hover:bg-muted text-muted-foreground'}`}
                                 >D</button>
                                 <div className="w-px bg-border"></div>
                                 <button 
-                                  onClick={() => updateGame({ winner_id: homeId, home_forfeit: false, away_forfeit: false })}
+                                  onClick={() => updateGame({ winner_id: game.winner_id === homeId ? null : homeId, home_forfeit: false, away_forfeit: false })}
                                   className={`px-2 text-xs font-black transition-colors ${game.winner_id === homeId ? 'bg-red-500/20 text-red-500' : 'hover:bg-muted text-muted-foreground'}`}
                                 >L</button>
                               </div>
