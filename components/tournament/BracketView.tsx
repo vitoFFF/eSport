@@ -592,7 +592,10 @@ export default function BracketView({
     const rounds = Array.from(new Set(groupMatches.map(m => m.details?.rr_round ?? 0))).sort((a, b) => a - b)
     const currentRoundIdx = rounds.includes(activeRoundIdx) ? activeRoundIdx : (rounds[0] || 0)
     
-    const roundMatches = groupMatches.filter(m => (m.details?.rr_round ?? 0) === currentRoundIdx)
+    const roundMatches = groupMatches.filter(m => 
+      (m.details?.rr_round ?? 0) === currentRoundIdx && 
+      !m.details?.is_bye // Remove BYE/TBD matches from schedule
+    )
 
     // Standings calculation for current group
     const participantIdsInGroup = new Set<string>()
@@ -604,12 +607,15 @@ export default function BracketView({
     const groupParticipants = normalizedParticipants.filter(p => participantIdsInGroup.has(p.id))
     
     const stats = groupParticipants.reduce((acc, p) => {
-      acc[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, pld: 0, w: 0, d: 0, l: 0, pts: 0, diff: 0 }
+      acc[p.id] = { 
+        id: p.id, name: p.name, avatar_url: p.avatar_url, 
+        pld: 0, w: 0, d: 0, l: 0, f: 0, sa: 0, pts: 0 
+      }
       return acc
     }, {} as any)
 
     groupMatches.forEach(m => {
-      if (m.status === 'confirmed') {
+      if (m.status === 'confirmed' && !m.details?.is_bye) {
         const homeId = m.home_team_id || m.home_player_id
         const awayId = m.away_team_id || m.away_player_id
         if (!stats[homeId] || !stats[awayId]) return
@@ -619,8 +625,11 @@ export default function BracketView({
 
         const homeScore = m.home_score || 0
         const awayScore = m.away_score || 0
-        stats[homeId].diff += (homeScore - awayScore)
-        stats[awayId].diff += (awayScore - homeScore)
+        
+        stats[homeId].f += homeScore
+        stats[homeId].sa += awayScore
+        stats[awayId].f += awayScore
+        stats[awayId].sa += homeScore
 
         if (homeScore > awayScore) {
           stats[homeId].w++; stats[homeId].pts += 3; stats[awayId].l++
@@ -634,7 +643,10 @@ export default function BracketView({
 
     const standings = Object.values(stats).sort((a: any, b: any) => {
       if (b.pts !== a.pts) return b.pts - a.pts
-      return b.diff - a.diff
+      const aDiff = a.f - a.sa
+      const bDiff = b.f - b.sa
+      if (bDiff !== aDiff) return bDiff - aDiff
+      return b.f - a.f // Goals For tiebreaker
     })
 
     return (
@@ -658,7 +670,7 @@ export default function BracketView({
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto space-y-12">
+        <div className="max-w-6xl mx-auto space-y-12">
           {/* Standings Card */}
           <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl overflow-hidden shadow-3d luxury-border-glow">
             <div className="bg-muted/50 px-8 py-6 border-b border-border flex justify-between items-center">
@@ -667,45 +679,59 @@ export default function BracketView({
                  Standings: Group {String.fromCharCode(65 + currentGroupIdx)}
               </h4>
             </div>
-            <table className="w-full text-sm text-left">
-              <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/50">
-                <tr>
-                  <th className="px-8 py-5">Rank</th>
-                  <th className="px-8 py-5">Competitor</th>
-                  <th className="px-8 py-5 text-center">Pld</th>
-                  <th className="px-8 py-5 text-right text-accent-blue">Pts</th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((team: any, idx: number) => (
-                  <motion.tr
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    key={team.id}
-                    className="border-b border-border/50 hover:bg-white/5 transition-colors group"
-                  >
-                    <td className="px-8 py-5 font-black">
-                      <span className={idx < 3 ? 'text-accent-blue' : 'text-muted-foreground'}>{idx + 1}</span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-4">
-                        <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden shadow-inner group-hover:scale-110 transition-transform">
-                          {team.avatar_url ? (
-                            <img src={team.avatar_url} className="w-full h-full object-cover" />
-                          ) : (
-                            <Users size={18} className="text-muted-foreground" />
-                          )}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left min-w-[800px]">
+                <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/50">
+                  <tr>
+                    <th className="px-6 py-5">Rank</th>
+                    <th className="px-6 py-5">Competitor</th>
+                    <th className="px-4 py-5 text-center">P</th>
+                    <th className="px-4 py-5 text-center">W</th>
+                    <th className="px-4 py-5 text-center">D</th>
+                    <th className="px-4 py-5 text-center">L</th>
+                    <th className="px-4 py-5 text-center">F</th>
+                    <th className="px-4 py-5 text-center">SA</th>
+                    <th className="px-4 py-5 text-center">+/-</th>
+                    <th className="px-8 py-5 text-right text-accent-blue">Pts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {standings.map((team: any, idx: number) => (
+                    <motion.tr
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      key={team.id}
+                      className="border-b border-border/50 hover:bg-white/5 transition-colors group"
+                    >
+                      <td className="px-6 py-5 font-black">
+                        <span className={idx < 3 ? 'text-accent-blue' : 'text-muted-foreground'}>{idx + 1}</span>
+                      </td>
+                      <td className="px-6 py-5">
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden shadow-inner group-hover:scale-110 transition-transform">
+                            {team.avatar_url ? (
+                              <img src={team.avatar_url} className="w-full h-full object-cover" />
+                            ) : (
+                              <Users size={18} className="text-muted-foreground" />
+                            )}
+                          </div>
+                          <span className="font-bold text-base truncate max-w-[150px]">{team.name}</span>
                         </div>
-                        <span className="font-bold text-base truncate max-w-[200px]">{team.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-center font-bold text-muted-foreground text-base">{team.pld}</td>
-                    <td className="px-8 py-5 text-right font-black text-accent-blue text-2xl">{team.pts}</td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                      <td className="px-4 py-5 text-center font-bold text-muted-foreground">{team.pld}</td>
+                      <td className="px-4 py-5 text-center font-bold text-emerald-500">{team.w}</td>
+                      <td className="px-4 py-5 text-center font-bold text-amber-500">{team.d}</td>
+                      <td className="px-4 py-5 text-center font-bold text-red-500">{team.l}</td>
+                      <td className="px-4 py-5 text-center font-bold">{team.f}</td>
+                      <td className="px-4 py-5 text-center font-bold text-muted-foreground">{team.sa}</td>
+                      <td className="px-4 py-5 text-center font-bold text-accent-blue">{team.f - team.sa}</td>
+                      <td className="px-8 py-5 text-right font-black text-accent-blue text-xl">{team.pts}</td>
+                    </motion.tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Match Schedule with Round Tabs */}
@@ -737,7 +763,7 @@ export default function BracketView({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <AnimatePresence mode="wait">
-                {roundMatches.map((m, i) => (
+                {roundMatches.length > 0 ? roundMatches.map((m, i) => (
                   <motion.div
                     key={m.id}
                     initial={{ opacity: 0, x: -10 }}
@@ -747,7 +773,11 @@ export default function BracketView({
                   >
                     {renderMatchCard(m, i, 0, 0)}
                   </motion.div>
-                ))}
+                )) : (
+                  <div className="col-span-full py-12 text-center border border-dashed border-border rounded-3xl opacity-50">
+                    <p className="text-xs font-black uppercase tracking-widest">No matches in this round</p>
+                  </div>
+                )}
               </AnimatePresence>
             </div>
           </div>

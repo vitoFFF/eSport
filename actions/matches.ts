@@ -120,10 +120,13 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
   }
 
   // 3. Strict Completion Rule
-  const isCompleted = isWalkover || homeWins >= threshold || awayWins >= threshold;
+  // For Round Robin and Group Stage, a match can be completed even if no one reaches the threshold (a draw)
+  const isLeagueFormat = ['round_robin', 'group_stage'].includes(tournament.bracket_structure);
+  const isCompleted = isWalkover || homeWins >= threshold || awayWins >= threshold || (isLeagueFormat && games.length >= (threshold * 2 - 1));
+  
   console.log(`[ScoreUpdate] Home Wins: ${homeWins} | Away Wins: ${awayWins} | Completed: ${isCompleted}`)
 
-  if (isCompleted && !isWalkover && homeWins === awayWins && !['round_robin', 'group_stage', 'swiss_system'].includes(tournament.bracket_structure)) {
+  if (isCompleted && !isWalkover && homeWins === awayWins && !isLeagueFormat) {
       return { error: 'Elimination matches cannot end in a draw.' }
   }
 
