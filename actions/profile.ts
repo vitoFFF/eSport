@@ -147,23 +147,35 @@ export async function createTournament(formData: FormData) {
   const rules = formData.get('rules') as string
   const bannerUrl = formData.get('bannerUrl') as string
 
-  // New MatchPoint specific fields
+  // Step 1 & 2 fields
+  const platform = formData.get('platform') as string
+  const locationType = formData.get('locationType') as string
+  const locationUrl = formData.get('locationUrl') as string
+  const locationAddress = formData.get('locationAddress') as string
+  const entryFee = formData.get('entryFee') as string
+  const participantLimit = formData.get('participantLimit') ? parseInt(formData.get('participantLimit') as string) : null
+
+  // Date parsing
+  const registrationStartDate = formData.get('registrationStartDate') ? new Date(formData.get('registrationStartDate') as string).toISOString() : null
+  const registrationEndDate = formData.get('registrationEndDate') ? new Date(formData.get('registrationEndDate') as string).toISOString() : null
+  const startDate = formData.get('startDate') ? new Date(formData.get('startDate') as string).toISOString() : null
+  const endDate = formData.get('endDate') ? new Date(formData.get('endDate') as string).toISOString() : null
+
+  // Format & Advanced Settings
   const participationMode = formData.get('participationMode') as string || 'team'
-  const maxRosterSize = parseInt(formData.get('maxRosterSize') as string || '0')
-  let bracketStructure = formData.get('bracketStructure') as string || 'single_elimination'
-  if (bracketStructure === 'custom') {
-    const customDetails = formData.get('customBracketStructure') as string
-    if (customDetails) {
-      bracketStructure = `Custom: ${customDetails}`
-    }
-  }
-  const seedingMethod = formData.get('seedingMethod') as string || 'random'
-  const thirdPlaceMatch = formData.get('thirdPlaceMatch') === 'true'
-  const pointPolicy = JSON.parse(formData.get('pointPolicy') as string || '{}')
-  const stageParticipants = parseInt(formData.get('stageParticipants') as string || '8')
-  
+  const teamSize = parseInt(formData.get('teamSize') as string || '1')
+  const bracketStructure = formData.get('bracketStructure') as string || 'single_elimination'
   const matchFormat = formData.get('matchFormat') as string || 'bo1'
+  const finalMatchFormat = formData.get('finalMatchFormat') as string || matchFormat
+  const seedingMethod = formData.get('seedingMethod') as string || 'random'
+  const scoreReportingMethod = formData.get('scoreReportingMethod') as string || 'admins_only'
+  const tieBreakerRule = formData.get('tieBreakerRule') as string
+  const thirdPlaceMatch = formData.get('thirdPlaceMatch') === 'true'
+  
+  const stageParticipants = parseInt(formData.get('stageParticipants') as string || '8')
   const promotionCount = parseInt(formData.get('promotionCount') as string || '2')
+  const groupCount = parseInt(formData.get('groupCount') as string || '0')
+  const pointPolicy = JSON.parse(formData.get('pointPolicy') as string || '{"1st": 500, "2nd": 200}')
 
   const { data, error } = await supabase
     .from('tournaments')
@@ -176,16 +188,31 @@ export async function createTournament(formData: FormData) {
       organizer_id: user.id,
       status: 'upcoming',
       category: formData.get('category') as string || 'esport',
+      platform,
+      location_type: locationType,
+      location_url: locationUrl,
+      location_address: locationAddress,
+      participant_limit: participantLimit,
+      registration_start_date: registrationStartDate,
+      registration_end_date: registrationEndDate,
+      start_date: startDate,
+      end_date: endDate,
+      entry_fee: entryFee,
       participation_mode: participationMode,
-      max_roster_size: maxRosterSize,
+      team_size: teamSize,
       bracket_structure: bracketStructure,
+      match_format: matchFormat,
+      final_match_format: finalMatchFormat,
       seeding_method: seedingMethod,
+      score_reporting_method: scoreReportingMethod,
+      tie_breaker_rule: tieBreakerRule,
       third_place_match: thirdPlaceMatch,
       point_policy: pointPolicy,
       settings: {
         stage_participants_count: stageParticipants,
         match_format: matchFormat,
-        promotion_count: promotionCount
+        promotion_count: promotionCount,
+        group_count: groupCount
       }
     })
     .select()

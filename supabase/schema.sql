@@ -87,6 +87,24 @@ CREATE TABLE public.tournaments (
     third_place_match BOOLEAN DEFAULT false,
     point_policy JSONB DEFAULT '{}', -- Custom points for rankings
     settings JSONB DEFAULT '{}', -- colors, fonts, layout, stage_participants_count
+    
+    -- New fields for Organizer Dashboard
+    platform TEXT, -- e.g., 'PC', 'PS5', 'Xbox', 'Crossplay', 'Turf', etc.
+    location_type TEXT DEFAULT 'online', -- 'online', 'lan_offline'
+    location_url TEXT, -- Discord/Twitch link
+    location_address TEXT, -- Physical address
+    participant_limit INTEGER, -- Max allowed participants
+    registration_start_date TIMESTAMP WITH TIME ZONE,
+    registration_end_date TIMESTAMP WITH TIME ZONE,
+    start_date TIMESTAMP WITH TIME ZONE,
+    end_date TIMESTAMP WITH TIME ZONE,
+    entry_fee TEXT, -- Optional, e.g., 'Free' or '10 GEL'
+    team_size INTEGER, -- Size of team (e.g., 1, 2, 5)
+    match_format TEXT DEFAULT 'bo1', -- 'bo1', 'bo3', 'bo5'
+    final_match_format TEXT, -- Use different format for final (bo3, bo5)
+    score_reporting_method TEXT DEFAULT 'admins_only', -- 'admins_only', 'players'
+    tie_breaker_rule TEXT, -- 'h2h', 'goal_difference'
+    
     created_at TIMESTAMP
     WITH
         TIME ZONE DEFAULT NOW()

@@ -136,10 +136,24 @@ export default async function TournamentDetailsPage({
           <div className="lg:col-span-2 space-y-8">
             <div>
               <span className="inline-block px-3 py-1 rounded-md bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest mb-3 shadow-lg shadow-accent-blue/20">
-                {tournament.category} • {tournament.participation_mode === 'team' || tournament.participation_mode === 'Team NvN' ? 'Team Mode' : '1v1 Mode'}
+                {tournament.category} • {tournament.participation_mode === 'team' ? `${tournament.team_size}v${tournament.team_size}` : '1v1'}
               </span>
               <h1 className="text-5xl md:text-6xl font-black text-white uppercase tracking-tight text-shadow-sm">{tournament.name}</h1>
-              <p className="text-white/70 mt-6 text-lg max-w-2xl">{tournament.description || "No official description provided for this event."}</p>
+              <div className="flex flex-wrap gap-4 mt-4">
+                {tournament.platform && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
+                    <LayoutGrid size={14} className="text-accent-blue" />
+                    <span className="text-xs font-bold text-white/80">{tournament.platform}</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
+                  <Calendar size={14} className="text-accent-purple" />
+                  <span className="text-xs font-bold text-white/80">
+                    {tournament.start_date ? new Date(tournament.start_date).toLocaleDateString() : 'TBD'}
+                  </span>
+                </div>
+              </div>
+              <p className="text-white/70 mt-6 text-lg max-w-2xl" dangerouslySetInnerHTML={{ __html: tournament.description || "No official description provided for this event." }} />
             </div>
 
             {/* Tournament Format Info Cards */}
@@ -158,36 +172,36 @@ export default async function TournamentDetailsPage({
 
                <div className="p-6 rounded-[2rem] bg-card/40 border border-border/50 backdrop-blur-md flex flex-col items-center justify-center text-center space-y-3 hover:border-accent-purple/30 transition-all group">
                   <div className="p-3 rounded-2xl bg-accent-purple/10 text-accent-purple group-hover:scale-110 transition-transform">
-                     <Users size={24} />
+                     <Target size={24} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Entry Mode</p>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Match Format</p>
                     <p className="text-sm font-black uppercase text-foreground">
-                       {tournament.participation_mode === 'team' || tournament.participation_mode === 'Team NvN' ? 'Team vs Team' : 'Individual 1v1'}
+                       {tournament.match_format?.toUpperCase() || 'BO1'}
                     </p>
                   </div>
                </div>
 
                <div className="p-6 rounded-[2rem] bg-card/40 border border-border/50 backdrop-blur-md flex flex-col items-center justify-center text-center space-y-3 hover:border-emerald-500/30 transition-all group">
                   <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform">
-                     <Shield size={24} />
+                     <Users size={24} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Roster Size</p>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Participation</p>
                     <p className="text-sm font-black uppercase text-foreground">
-                       {tournament.max_roster_size} Players
+                       {tournament.participation_mode === 'team' ? `${tournament.team_size}v${tournament.team_size}` : '1v1'}
                     </p>
                   </div>
                </div>
 
                <div className="p-6 rounded-[2rem] bg-card/40 border border-border/50 backdrop-blur-md flex flex-col items-center justify-center text-center space-y-3 hover:border-amber-500/30 transition-all group">
                   <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
-                     <Target size={24} />
+                     <LayoutGrid size={24} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Stage Start</p>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Location</p>
                     <p className="text-sm font-black uppercase text-foreground">
-                       {tournament.settings?.stage_participants_count || 8} Participants
+                       {tournament.location_type === 'online' ? 'Online' : 'LAN/Offline'}
                     </p>
                   </div>
                </div>

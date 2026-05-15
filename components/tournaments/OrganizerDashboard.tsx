@@ -6,6 +6,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createTournament, deleteTournament } from '@/actions/profile'
 import ModernSelect from '@/components/ui/ModernSelect'
+import dynamic from 'next/dynamic'
+import 'react-quill-new/dist/quill.snow.css'
+
+const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false, loading: () => <p className="text-sm text-muted-foreground p-4">Loading editor...</p> })
 
 interface OrganizerDashboardProps {
   profile: any
@@ -21,12 +25,23 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
   const [category, setCategory] = useState('esport')
   const [seedingMethod, setSeedingMethod] = useState('random')
   const [rankingYear, setRankingYear] = useState('2026')
-  const [maxRosterSize, setMaxRosterSize] = useState(5)
   const [selectedBanner, setSelectedBanner] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [matchFormat, setMatchFormat] = useState('bo1')
   const [promotionCount, setPromotionCount] = useState(2)
+  const [groupCount, setGroupCount] = useState(2)
   const [showDeleteId, setShowDeleteId] = useState<string | null>(null)
+  
+  // New state variables
+  const [description, setDescription] = useState('')
+  const [platform, setPlatform] = useState('PC')
+  const [locationType, setLocationType] = useState('online')
+  const [finalMatchFormatEnabled, setFinalMatchFormatEnabled] = useState(false)
+  const [finalMatchFormat, setFinalMatchFormat] = useState('bo3')
+  const [scoreReportingMethod, setScoreReportingMethod] = useState('admins_only')
+  const [tieBreakerRule, setTieBreakerRule] = useState('h2h')
+  const [teamSize, setTeamSize] = useState('1')
+  
   const router = useRouter()
 
   async function handleCreateTournament(e: React.FormEvent<HTMLFormElement>) {
@@ -36,6 +51,8 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
     // Add default empty point policy and banner
     formData.append('pointPolicy', JSON.stringify({ "1st": 500, "2nd": 200 }))
     if (selectedBanner) formData.append('bannerUrl', selectedBanner)
+    formData.append('description', description)
+    if (finalMatchFormatEnabled) formData.append('finalMatchFormat', finalMatchFormat)
 
     const result = await createTournament(formData)
     if (result.error) setMessage({ type: 'error', text: result.error })
@@ -220,6 +237,7 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
           </h3>
 
           <form onSubmit={handleCreateTournament} className="space-y-8">
+            {/* Step 1: Basic Info & Location */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Grand Tournament Title</label>
@@ -229,102 +247,248 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                 <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Prize Pool Offering</label>
                 <input name="prizePool" placeholder="$10,000 USD" className="w-full rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
               </div>
+              
+              <div className="space-y-2">
+                <ModernSelect
+                  label="Platform / Surface"
+                  name="platform"
+                  value={platform}
+                  onChange={setPlatform}
+                  options={[
+                    { value: 'PC', label: 'PC', emoji: '💻' },
+                    { value: 'PS5', label: 'PlayStation 5', emoji: '🎮' },
+                    { value: 'Xbox', label: 'Xbox', emoji: '🕹️' },
+                    { value: 'Crossplay', label: 'Crossplay', emoji: '🌐' },
+                    { value: 'Turf', label: 'Turf (Sports)', emoji: '🏟️' },
+                  ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <ModernSelect
+                  label="Location Type"
+                  name="locationType"
+                  value={locationType}
+                  onChange={setLocationType}
+                  options={[
+                    { value: 'online', label: 'Online', emoji: '🌐' },
+                    { value: 'lan_offline', label: 'LAN / Offline', emoji: '📍' },
+                  ]}
+                />
+              </div>
+
+              {locationType === 'online' ? (
+                <div className="space-y-2 col-span-1 md:col-span-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Discord / Twitch Link</label>
+                  <input name="locationUrl" placeholder="https://discord.gg/..." className="w-full rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                </div>
+              ) : (
+                <div className="space-y-2 col-span-1 md:col-span-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Physical Address</label>
+                  <input name="locationAddress" placeholder="e.g. Arena Stadium, Tbilisi" className="w-full rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Description & Lore</label>
-              <textarea name="description" placeholder="Tell players why this tournament is legendary..." className="w-full min-h-[80px] rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Description & Rules</label>
+              <div className="rounded-2xl overflow-hidden border border-border bg-muted/30">
+                <ReactQuill theme="snow" value={description} onChange={setDescription} className="h-48 mb-12" />
+              </div>
             </div>
 
-            {/* MatchPoint Configs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 p-6 rounded-3xl border border-border bg-accent-blue/5">
-              <ModernSelect
-                label="Sport Category"
-                name="category"
-                value={category}
-                onChange={setCategory}
-                options={[
-                  { value: 'esport', label: 'eSport', emoji: '🎮' },
-                  { value: 'football', label: 'Football', emoji: '⚽' },
-                  { value: 'tennis', label: 'Tennis', emoji: '🎾' },
-                  { value: 'padel', label: 'Padel', emoji: '🏸' },
-                ]}
-              />
-              <ModernSelect
-                label="Participation Mode"
-                name="participationMode"
-                value={participationMode}
-                onChange={setParticipationMode}
-                options={[
-                  { value: 'team', label: 'Team (N vs N)', emoji: '👥' },
-                  { value: '1v1', label: 'Individual (1v1)', emoji: '👤' },
-                ]}
-              />
-              <div className="space-y-2 transition-all duration-300">
-                <label className={`text-xs font-black uppercase tracking-widest text-muted-foreground ${participationMode === '1v1' ? 'opacity-50' : ''}`}>Max Roster Size</label>
-                <input
-                  name="maxRosterSize"
-                  type="number"
-                  min={1}
-                  readOnly={participationMode === '1v1'}
-                  value={participationMode === '1v1' ? 1 : maxRosterSize}
-                  onChange={(e) => setMaxRosterSize(parseInt(e.target.value) || 1)}
-                  className={`w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none ${participationMode === '1v1' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                />
-              </div>
-              <ModernSelect
-                label="Bracket Structure"
-                name="bracketStructure"
-                value={bracketStructure}
-                onChange={setBracketStructure}
-                options={[
-                  { value: 'single_elimination', label: 'Single Elimination', emoji: '🏆' },
-                  { value: 'double_elimination', label: 'Double Elimination', emoji: '🥈' },
-                  { value: 'round_robin', label: 'Round Robin', emoji: '🔄' },
-                  { value: 'swiss_system', label: 'Swiss System', emoji: '🇨🇭' },
-                  { value: 'group_stage', label: 'Group Stage', emoji: '👥' },
-                  { value: 'hybrid', label: 'Hybrid (Group + Playoff)', emoji: '🔥' },
-                ]}
-              />
-              <ModernSelect
-                label="Match Format"
-                name="matchFormat"
-                value={matchFormat}
-                onChange={setMatchFormat}
-                options={[
-                  { value: 'bo1', label: 'Best of 1', emoji: '1️⃣' },
-                  { value: 'bo3', label: 'Best of 3', emoji: '3️⃣' },
-                  { value: 'bo5', label: 'Best of 5', emoji: '5️⃣' },
-                ]}
-              />
-              <ModernSelect
-                label="Seeding Method"
-                name="seedingMethod"
-                value={seedingMethod}
-                onChange={setSeedingMethod}
-                options={[
-                  { value: 'random', label: 'Random Shuffling', emoji: '🎲' },
-                  { value: 'rank', label: 'Rank-based', emoji: '📈' },
-                  { value: 'manual', label: 'Manual Assignment', emoji: '✍️' },
-                ]}
-              />
-              <div className="space-y-2">
-                <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Participants</label>
-                <input name="stageParticipants" type="number" defaultValue={8} min={2} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
-              </div>
-              {bracketStructure === 'hybrid' && (
-                <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Promotion Count (Per Group)</label>
-                  <input name="promotionCount" type="number" value={promotionCount} onChange={(e) => setPromotionCount(parseInt(e.target.value) || 2)} min={1} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
-                </div>
-              )}
+            {/* Step 2: Registration & Schedule */}
+            <div className="p-6 rounded-3xl border border-border bg-card shadow-sm space-y-6">
+               <h4 className="font-black text-lg">Registration & Schedule</h4>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Participant Limit</label>
+                   <input name="participantLimit" type="number" placeholder="Leave empty for unlimited" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Entry Fee (Optional)</label>
+                   <input name="entryFee" placeholder="e.g. Free or 10 GEL" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Registration Start Date</label>
+                   <input name="registrationStartDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Registration End Date</label>
+                   <input name="registrationEndDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Tournament Start Date</label>
+                   <input name="startDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Tournament End Date</label>
+                   <input name="endDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+               </div>
+            </div>
 
-              {['single_elimination', 'double_elimination'].includes(bracketStructure) && (
-                <div className="space-y-2 col-span-2 flex items-center gap-4 mt-6 transition-all duration-300">
-                  <input type="checkbox" name="thirdPlaceMatch" value="true" className="h-5 w-5 rounded-md border-border text-accent-blue focus:ring-accent-blue" />
-                  <label className="text-sm font-bold">Generate Third-Place Consolation Match</label>
+            {/* Step 3 & 4: Format & Advanced Settings */}
+            <div className="p-6 rounded-3xl border border-border bg-accent-blue/5 space-y-6">
+              <h4 className="font-black text-lg">Format & Advanced Settings</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <ModernSelect
+                  label="Sport Category"
+                  name="category"
+                  value={category}
+                  onChange={setCategory}
+                  options={[
+                    { value: 'esport', label: 'eSport', emoji: '🎮' },
+                    { value: 'football', label: 'Football', emoji: '⚽' },
+                    { value: 'tennis', label: 'Tennis', emoji: '🎾' },
+                    { value: 'padel', label: 'Padel', emoji: '🏸' },
+                  ]}
+                />
+                <ModernSelect
+                  label="Participation Mode"
+                  name="participationMode"
+                  value={participationMode}
+                  onChange={setParticipationMode}
+                  options={[
+                    { value: 'team', label: 'Team', emoji: '👥' },
+                    { value: '1v1', label: 'Individual (1v1)', emoji: '👤' },
+                  ]}
+                />
+                
+                {participationMode === 'team' ? (
+                  <ModernSelect
+                    label="Team Size"
+                    name="teamSize"
+                    value={teamSize}
+                    onChange={setTeamSize}
+                    options={[
+                      { value: '2', label: '2v2', emoji: '👥' },
+                      { value: '5', label: '5v5', emoji: '🖐' },
+                      { value: '11', label: '11v11', emoji: '⚽' },
+                    ]}
+                  />
+                ) : (
+                  <div className="space-y-2 opacity-50">
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Team Size</label>
+                    <input type="text" readOnly value="1v1" className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none cursor-not-allowed" />
+                    <input type="hidden" name="teamSize" value="1" />
+                  </div>
+                )}
+
+                <ModernSelect
+                  label="Bracket Structure"
+                  name="bracketStructure"
+                  value={bracketStructure}
+                  onChange={setBracketStructure}
+                  options={[
+                    { value: 'single_elimination', label: 'Single Elimination', emoji: '🏆' },
+                    { value: 'double_elimination', label: 'Double Elimination', emoji: '🥈' },
+                    { value: 'round_robin', label: 'Round Robin', emoji: '🔄' },
+                    { value: 'swiss_system', label: 'Swiss System', emoji: '🇨🇭' },
+                    { value: 'group_stage', label: 'Group Stage', emoji: '👥' },
+                    { value: 'hybrid', label: 'Two-Stage / Hybrid', emoji: '🔥' },
+                  ]}
+                />
+                <ModernSelect
+                  label="Default Match Format"
+                  name="matchFormat"
+                  value={matchFormat}
+                  onChange={setMatchFormat}
+                  options={[
+                    { value: 'bo1', label: 'Best of 1', emoji: '1️⃣' },
+                    { value: 'bo3', label: 'Best of 3', emoji: '3️⃣' },
+                    { value: 'bo5', label: 'Best of 5', emoji: '5️⃣' },
+                  ]}
+                />
+                
+                <ModernSelect
+                  label="Seeding Method"
+                  name="seedingMethod"
+                  value={seedingMethod}
+                  onChange={setSeedingMethod}
+                  options={[
+                    { value: 'random', label: 'Random Shuffling', emoji: '🎲' },
+                    { value: 'manual', label: 'Manual Assignment', emoji: '✍️' },
+                    { value: 'elo', label: 'By ELO / Ranking', emoji: '📈' },
+                  ]}
+                />
+
+                <ModernSelect
+                  label="Score Reporting"
+                  name="scoreReportingMethod"
+                  value={scoreReportingMethod}
+                  onChange={setScoreReportingMethod}
+                  options={[
+                    { value: 'admins_only', label: 'Admins Only', emoji: '🔒' },
+                    { value: 'players', label: 'Players (Approval Required)', emoji: '🤝' },
+                  ]}
+                />
+
+                {bracketStructure === 'round_robin' && (
+                  <ModernSelect
+                    label="Tie-breaker Rule"
+                    name="tieBreakerRule"
+                    value={tieBreakerRule}
+                    onChange={setTieBreakerRule}
+                    options={[
+                      { value: 'h2h', label: 'Head to Head', emoji: '⚔️' },
+                      { value: 'goal_difference', label: 'Goal Difference', emoji: '🔢' },
+                    ]}
+                  />
+                )}
+                
+                {bracketStructure === 'hybrid' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Promotion Count (Per Group)</label>
+                    <input name="promotionCount" type="number" value={promotionCount} onChange={(e) => setPromotionCount(parseInt(e.target.value) || 2)} min={1} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
+                  </div>
+                )}
+                
+                {(bracketStructure === 'group_stage' || bracketStructure === 'hybrid') && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Requested Groups</label>
+                    <input name="groupCount" type="number" value={groupCount} onChange={(e) => setGroupCount(parseInt(e.target.value) || 1)} min={1} className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none" />
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/50">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="checkbox" 
+                      id="finalFormatToggle"
+                      checked={finalMatchFormatEnabled}
+                      onChange={(e) => setFinalMatchFormatEnabled(e.target.checked)}
+                      className="h-5 w-5 rounded-md border-border text-accent-blue focus:ring-accent-blue" 
+                    />
+                    <label htmlFor="finalFormatToggle" className="text-sm font-bold">Use different format for final</label>
+                  </div>
+                  
+                  {finalMatchFormatEnabled && (
+                    <div className="pl-9">
+                      <ModernSelect
+                        label="Final Match Format"
+                        name="finalMatchFormat"
+                        value={finalMatchFormat}
+                        onChange={setFinalMatchFormat}
+                        options={[
+                          { value: 'bo3', label: 'Best of 3', emoji: '3️⃣' },
+                          { value: 'bo5', label: 'Best of 5', emoji: '5️⃣' },
+                          { value: 'bo7', label: 'Best of 7', emoji: '7️⃣' },
+                        ]}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
+
+                {['single_elimination', 'double_elimination'].includes(bracketStructure) && (
+                  <div className="flex items-center gap-4">
+                    <input type="checkbox" name="thirdPlaceMatch" value="true" className="h-5 w-5 rounded-md border-border text-accent-blue focus:ring-accent-blue" />
+                    <label className="text-sm font-bold">Generate Third-Place Consolation Match</label>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Banner Selection */}

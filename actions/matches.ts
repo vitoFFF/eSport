@@ -383,9 +383,14 @@ export async function generateBracketMatches(tournamentId: string) {
     }
 
   } else if (structure === 'round_robin' || structure === 'group_stage' || structure === 'hybrid') {
-    const groupCount = (structure === 'group_stage' || structure === 'hybrid') ? Math.max(1, Math.ceil(registrations.length / 4)) : 1;
+    const requestedGroupCount = tournament.settings?.group_count ? parseInt(tournament.settings.group_count) : 0;
+    const groupCount = (structure === 'group_stage' || structure === 'hybrid') 
+      ? (requestedGroupCount > 0 ? requestedGroupCount : Math.max(1, Math.ceil(registrations.length / 4))) 
+      : 1;
+      
     const groups: any[][] = Array.from({length: groupCount}, () => []);
     
+    // Snake seeding distribution
     for (let i = 0; i < registrations.length; i++) {
         const roundTrip = Math.floor(i / groupCount);
         const direction = roundTrip % 2 === 0 ? 1 : -1;
@@ -393,35 +398,74 @@ export async function generateBracketMatches(tournamentId: string) {
         groups[groupIndex].push(registrations[i]);
     }
 
+    const structuredGroups: any[] = [];
+
     groups.forEach((groupRegs, gIndex) => {
+        const groupObj: any = {
+            group_index: gIndex,
+            group_name: `Group ${String.fromCharCode(65 + gIndex)}`,
+            rounds: []
+        };
+
         const isOdd = groupRegs.length % 2 !== 0;
         const players = [...groupRegs];
-        if (isOdd) players.push(null);
+        if (isOdd) players.push(null); // Dummy player for BYE
+        
         const n = players.length;
-        const rounds = n - 1;
-        const half = n / 2;
+        const totalRounds = n - 1;
+        const matchesPerRound = n / 2;
 
-        for (let r = 0; r < rounds; r++) {
-            for (let i = 0; i < half; i++) {
+        for (let r = 0; r < totalRounds; r++) {
+            const roundObj: any = {
+                round_index: r,
+                matches: []
+            };
+
+            for (let i = 0; i < matchesPerRound; i++) {
                 const home = players[i];
                 const away = players[n - 1 - i];
-                if (home !== null && away !== null) {
-                    matchesToInsert.push({
-                        tournament_id: tournamentId,
-                        bracket_round: gIndex,
-                        match_order: matchesToInsert.length,
-                        status: 'pending',
-                        home_team_id: home.team_id,
-                        home_player_id: home.player_id,
-                        away_team_id: away.team_id,
-                        away_player_id: away.player_id,
-                        details: { bracket: structure, group_index: gIndex, rr_round: r }
-                    });
+                
+                const matchData: any = {
+                    tournament_id: tournamentId,
+                    bracket_round: gIndex, // Overloading bracket_round for group index in DB for now, but also in details
+                    match_order: matchesToInsert.length,
+                    status: (home === null || away === null) ? 'confirmed' : 'pending',
+                    home_team_id: home?.team_id || null,
+                    home_player_id: home?.player_id || null,
+                    away_team_id: away?.team_id || null,
+                    away_player_id: away?.player_id || null,
+                    details: { 
+                        bracket: structure, 
+                        group_index: gIndex, 
+                        rr_round: r,
+                        is_bye: home === null || away === null
+                    }
+                };
+
+                // If it's a bye, auto-confirm the winner
+                if (home === null || away === null) {
+                    const winner = home || away;
+                    if (winner) {
+                        matchData.winner_team_id = winner.team_id;
+                        matchData.winner_player_id = winner.player_id;
+                        matchData.home_score = home ? 1 : 0;
+                        matchData.away_score = away ? 1 : 0;
+                    }
                 }
+
+                matchesToInsert.push(matchData);
+                roundObj.matches.push(matchData);
             }
+            groupObj.rounds.push(roundObj);
+            
+            // Rotate players for next round (Circle algorithm)
             players.splice(1, 0, players.pop() as any);
         }
+        structuredGroups.push(groupObj);
     });
+
+    // Attach structured groups to the final return if needed
+    (tournament as any).generated_structure = structuredGroups;
 
     if (structure === 'hybrid') {
         const promotionCount = parseInt(tournament.settings?.promotion_count || '2');
@@ -490,8 +534,12 @@ export async function generateBracketMatches(tournamentId: string) {
   }
 
   revalidatePath(`/tournaments/${tournamentId}`)
-  return { success: true }
+  return { 
+    success: true, 
+    groups: (tournament as any).generated_structure 
+  }
 }
+
 
 export async function generateNextSwissRound(tournamentId: string) {
   const supabase = await createClient()
