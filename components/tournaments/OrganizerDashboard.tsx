@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { Trophy, Plus, Settings, BarChart3, Image as ImageIcon, Layout, FileText, Share2, Gamepad2, Trophy as TrophyIcon, Users, User, GitFork, Shuffle, TrendingUp, Edit3, Upload, Sparkles, Wand2, Trash2, X, ShieldAlert } from 'lucide-react'
+import { Trophy, Plus, Settings, BarChart3, Image as ImageIcon, Layout, FileText, Share2, Gamepad2, Trophy as TrophyIcon, Users, User, GitFork, Shuffle, TrendingUp, Edit3, Upload, Sparkles, Wand2, Trash2, X, ShieldAlert, Settings2, GripVertical, ArrowUp, ArrowDown } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createTournament, deleteTournament } from '@/actions/profile'
 import ModernSelect from '@/components/ui/ModernSelect'
 import dynamic from 'next/dynamic'
+import { AnimatePresence, motion } from 'framer-motion'
 import 'react-quill-new/dist/quill.snow.css'
 
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false, loading: () => <p className="text-sm text-muted-foreground p-4">Loading editor...</p> })
@@ -43,6 +44,14 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
   const [teamSize, setTeamSize] = useState('1')
   const [esportGame, setEsportGame] = useState('')
   const [participantLimit, setParticipantLimit] = useState<number | ''>('')
+  
+  const [isTieBreakerModalOpen, setIsTieBreakerModalOpen] = useState(false)
+  const [tieBreakerRules, setTieBreakerRules] = useState([
+    { id: 'h2h', label: 'Head to Head', active: true },
+    { id: 'gd', label: 'Goal Difference', active: true },
+    { id: 'pts', label: 'Points Scored', active: false },
+    { id: 'wins', label: 'Most Wins', active: false },
+  ])
   
   const router = useRouter()
 
@@ -407,16 +416,31 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                 />
 
                 {bracketStructure === 'round_robin' && (
-                  <ModernSelect
-                    label="Tie-breaker Rule"
-                    name="tieBreakerRule"
-                    value={tieBreakerRule}
-                    onChange={setTieBreakerRule}
-                    options={[
-                      { value: 'h2h', label: 'Head to Head', emoji: '⚔️' },
-                      { value: 'goal_difference', label: 'Goal Difference', emoji: '🔢' },
-                    ]}
-                  />
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <ModernSelect
+                        label="Primary Tie-breaker"
+                        name="tieBreakerRule"
+                        value={tieBreakerRule}
+                        onChange={setTieBreakerRule}
+                        options={[
+                          { value: 'h2h', label: 'Head to Head', emoji: '⚔️' },
+                          { value: 'goal_difference', label: 'Goal Difference', emoji: '🔢' },
+                        ]}
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-2">
+                      <div className="h-4" /> {/* Spacer to match ModernSelect label height */}
+                      <button 
+                        type="button"
+                        onClick={() => setIsTieBreakerModalOpen(true)}
+                        className="h-[46px] w-[46px] flex items-center justify-center rounded-xl border border-border bg-card text-accent-blue shadow-sm hover:bg-muted/50 transition-all group shrink-0"
+                        title="Configure Advanced Rules"
+                      >
+                        <Settings2 size={20} className="group-hover:rotate-90 transition-transform duration-500" />
+                      </button>
+                    </div>
+                  </div>
                 )}
                 
                 {bracketStructure === 'hybrid' && (
@@ -651,6 +675,110 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
           </div>
         </div>
       )}
+
+      {/* Advanced Tie-breaker Modal */}
+      <AnimatePresence>
+        {isTieBreakerModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setIsTieBreakerModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-card border border-border rounded-[2.5rem] shadow-2xl overflow-hidden"
+            >
+              <div className="p-8 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-black uppercase tracking-tight">Advanced Tie-breakers</h3>
+                    <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1">Set Rule Priority</p>
+                  </div>
+                  <button onClick={() => setIsTieBreakerModalOpen(false)} className="p-2 rounded-full hover:bg-muted transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {tieBreakerRules.map((rule, index) => (
+                    <div key={rule.id} className={`flex items-center gap-4 p-4 rounded-2xl border ${rule.active ? 'border-accent-blue/30 bg-accent-blue/5' : 'border-border bg-muted/20 opacity-60'} transition-all`}>
+                      <div className="flex flex-col gap-1">
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            if (index === 0) return
+                            const newRules = [...tieBreakerRules]
+                            const [moved] = newRules.splice(index, 1)
+                            newRules.splice(index - 1, 0, moved)
+                            setTieBreakerRules(newRules)
+                          }}
+                          className="p-1 hover:text-accent-blue transition-colors disabled:opacity-30"
+                          disabled={index === 0}
+                        >
+                          <ArrowUp size={14} />
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            if (index === tieBreakerRules.length - 1) return
+                            const newRules = [...tieBreakerRules]
+                            const [moved] = newRules.splice(index, 1)
+                            newRules.splice(index + 1, 0, moved)
+                            setTieBreakerRules(newRules)
+                          }}
+                          className="p-1 hover:text-accent-blue transition-colors disabled:opacity-30"
+                          disabled={index === tieBreakerRules.length - 1}
+                        >
+                          <ArrowDown size={14} />
+                        </button>
+                      </div>
+                      
+                      <div className="flex-1">
+                        <p className="font-black text-sm uppercase tracking-tight">{rule.label}</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Priority {index + 1}</p>
+                      </div>
+
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const newRules = [...tieBreakerRules]
+                          newRules[index].active = !newRules[index].active
+                          setTieBreakerRules(newRules)
+                        }}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${rule.active ? 'bg-accent-blue text-white' : 'bg-muted text-muted-foreground'}`}
+                      >
+                        {rule.active ? 'Active' : 'Disabled'}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="pt-4 flex gap-4">
+                  <button 
+                    type="button"
+                    onClick={() => setIsTieBreakerModalOpen(false)}
+                    className="flex-1 py-4 rounded-2xl bg-muted font-black uppercase tracking-widest text-xs hover:bg-muted/80 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setIsTieBreakerModalOpen(false)}
+                    className="flex-1 py-4 rounded-2xl bg-accent-blue text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-accent-blue/30 hover:bg-accent-blue/90 transition-all"
+                  >
+                    Apply Order
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
