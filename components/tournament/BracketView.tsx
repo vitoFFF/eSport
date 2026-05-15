@@ -57,6 +57,8 @@ export default function BracketView({
   const [editGames, setEditGames] = useState<GameData[]>([])
   const [isWalkover, setIsWalkover] = useState(false)
   const [walkoverWinner, setWalkoverWinner] = useState<string | null>(null)
+  const [activeGroupIdx, setActiveGroupIdx] = useState(0)
+  const [activeRoundIdx, setActiveRoundIdx] = useState(0)
 
   // Normalize participants and matches
   const normalizedParticipants = React.useMemo(() => {
@@ -580,127 +582,175 @@ export default function BracketView({
   }
 
   const renderRoundRobin = () => {
-    // Get unique group indices (bracket_round) from displayMatches
     const groupIds = Array.from(new Set(displayMatches.map(m => m.bracket_round))).sort((a, b) => a - b)
     
+    // Ensure active group exists
+    const currentGroupIdx = groupIds.includes(activeGroupIdx) ? activeGroupIdx : (groupIds[0] || 0)
+    const groupMatches = displayMatches.filter(m => m.bracket_round === currentGroupIdx)
+    
+    // Get unique rounds for this group
+    const rounds = Array.from(new Set(groupMatches.map(m => m.details?.rr_round ?? 0))).sort((a, b) => a - b)
+    const currentRoundIdx = rounds.includes(activeRoundIdx) ? activeRoundIdx : (rounds[0] || 0)
+    
+    const roundMatches = groupMatches.filter(m => (m.details?.rr_round ?? 0) === currentRoundIdx)
+
+    // Standings calculation for current group
+    const participantIdsInGroup = new Set<string>()
+    groupMatches.forEach(m => {
+      if (m.home_team_id || m.home_player_id) participantIdsInGroup.add(m.home_team_id || m.home_player_id)
+      if (m.away_team_id || m.away_player_id) participantIdsInGroup.add(m.away_team_id || m.away_player_id)
+    })
+
+    const groupParticipants = normalizedParticipants.filter(p => participantIdsInGroup.has(p.id))
+    
+    const stats = groupParticipants.reduce((acc, p) => {
+      acc[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, pld: 0, w: 0, d: 0, l: 0, pts: 0, diff: 0 }
+      return acc
+    }, {} as any)
+
+    groupMatches.forEach(m => {
+      if (m.status === 'confirmed') {
+        const homeId = m.home_team_id || m.home_player_id
+        const awayId = m.away_team_id || m.away_player_id
+        if (!stats[homeId] || !stats[awayId]) return
+
+        stats[homeId].pld++
+        stats[awayId].pld++
+
+        const homeScore = m.home_score || 0
+        const awayScore = m.away_score || 0
+        stats[homeId].diff += (homeScore - awayScore)
+        stats[awayId].diff += (awayScore - homeScore)
+
+        if (homeScore > awayScore) {
+          stats[homeId].w++; stats[homeId].pts += 3; stats[awayId].l++
+        } else if (awayScore > homeScore) {
+          stats[awayId].w++; stats[awayId].pts += 3; stats[homeId].l++
+        } else {
+          stats[homeId].d++; stats[homeId].pts += 1; stats[awayId].d++; stats[awayId].pts += 1
+        }
+      }
+    })
+
+    const standings = Object.values(stats).sort((a: any, b: any) => {
+      if (b.pts !== a.pts) return b.pts - a.pts
+      return b.diff - a.diff
+    })
+
     return (
       <div className="w-full space-y-12">
-        <div className={`grid grid-cols-1 ${groupIds.length > 1 ? 'lg:grid-cols-2' : ''} gap-8`}>
-          {groupIds.map((groupIdx) => {
-            const groupMatches = displayMatches.filter(m => m.bracket_round === groupIdx)
-            const groupName = groupIds.length > 1 ? `Group ${String.fromCharCode(65 + groupIdx)}` : 'Standings'
-            
-            // Get unique participant IDs in this group from the matches
-            const participantIdsInGroup = new Set<string>()
-            groupMatches.forEach(m => {
-              if (m.home_team_id || m.home_player_id) participantIdsInGroup.add(m.home_team_id || m.home_player_id)
-              if (m.away_team_id || m.away_player_id) participantIdsInGroup.add(m.away_team_id || m.away_player_id)
-            })
+        {/* Group Navigation */}
+        {groupIds.length > 1 && (
+          <div className="flex flex-wrap gap-2 p-1.5 bg-muted/30 rounded-2xl border border-border w-fit mx-auto mb-8">
+            {groupIds.map((gid) => (
+              <button
+                key={gid}
+                onClick={() => setActiveGroupIdx(gid)}
+                className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                  currentGroupIdx === gid 
+                    ? 'bg-accent-blue text-white shadow-lg shadow-accent-blue/20' 
+                    : 'text-muted-foreground hover:bg-muted/50 hover:text-white'
+                }`}
+              >
+                Group {String.fromCharCode(65 + gid)}
+              </button>
+            ))}
+          </div>
+        )}
 
-            const groupParticipants = normalizedParticipants.filter(p => participantIdsInGroup.has(p.id))
-            
-            const stats = groupParticipants.reduce((acc, p) => {
-              acc[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, pld: 0, w: 0, d: 0, l: 0, pts: 0, diff: 0 }
-              return acc
-            }, {} as any)
+        <div className="max-w-4xl mx-auto space-y-12">
+          {/* Standings Card */}
+          <div className="rounded-[2.5rem] border border-border bg-card/40 backdrop-blur-xl overflow-hidden shadow-3d luxury-border-glow">
+            <div className="bg-muted/50 px-8 py-6 border-b border-border flex justify-between items-center">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3">
+                 <LayoutGrid size={18} className="text-accent-blue" /> 
+                 Standings: Group {String.fromCharCode(65 + currentGroupIdx)}
+              </h4>
+            </div>
+            <table className="w-full text-sm text-left">
+              <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/50">
+                <tr>
+                  <th className="px-8 py-5">Rank</th>
+                  <th className="px-8 py-5">Competitor</th>
+                  <th className="px-8 py-5 text-center">Pld</th>
+                  <th className="px-8 py-5 text-right text-accent-blue">Pts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {standings.map((team: any, idx: number) => (
+                  <motion.tr
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    key={team.id}
+                    className="border-b border-border/50 hover:bg-white/5 transition-colors group"
+                  >
+                    <td className="px-8 py-5 font-black">
+                      <span className={idx < 3 ? 'text-accent-blue' : 'text-muted-foreground'}>{idx + 1}</span>
+                    </td>
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden shadow-inner group-hover:scale-110 transition-transform">
+                          {team.avatar_url ? (
+                            <img src={team.avatar_url} className="w-full h-full object-cover" />
+                          ) : (
+                            <Users size={18} className="text-muted-foreground" />
+                          )}
+                        </div>
+                        <span className="font-bold text-base truncate max-w-[200px]">{team.name}</span>
+                      </div>
+                    </td>
+                    <td className="px-8 py-5 text-center font-bold text-muted-foreground text-base">{team.pld}</td>
+                    <td className="px-8 py-5 text-right font-black text-accent-blue text-2xl">{team.pts}</td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-            groupMatches.forEach(m => {
-              if (m.status === 'confirmed') {
-                const homeId = m.home_team_id || m.home_player_id
-                const awayId = m.away_team_id || m.away_player_id
-                if (!stats[homeId] || !stats[awayId]) return
-
-                stats[homeId].pld++
-                stats[awayId].pld++
-
-                const homeScore = m.home_score || 0
-                const awayScore = m.away_score || 0
-                stats[homeId].diff += (homeScore - awayScore)
-                stats[awayId].diff += (awayScore - homeScore)
-
-                if (homeScore > awayScore) {
-                  stats[homeId].w++
-                  stats[homeId].pts += 3
-                  stats[awayId].l++
-                } else if (awayScore > homeScore) {
-                  stats[awayId].w++
-                  stats[awayId].pts += 3
-                  stats[homeId].l++
-                } else {
-                  stats[homeId].d++
-                  stats[homeId].pts += 1
-                  stats[awayId].d++
-                  stats[awayId].pts += 1
-                }
-              }
-            })
-
-            const standings = Object.values(stats).sort((a: any, b: any) => {
-              if (b.pts !== a.pts) return b.pts - a.pts
-              return b.diff - a.diff // Differential tiebreaker
-            })
-
-            return (
-              <div key={groupIdx} className="space-y-6">
-                <div className="rounded-2xl border border-border bg-card/50 overflow-hidden backdrop-blur-sm">
-                  <div className="bg-muted/50 px-6 py-4 border-b border-border">
-                    <h4 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                       <LayoutGrid size={16} className="text-accent-blue" /> {groupName}
-                    </h4>
-                  </div>
-                  <table className="w-full text-sm text-left">
-                    <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/50">
-                      <tr>
-                        <th className="px-6 py-4">Rank</th>
-                        <th className="px-6 py-4">Competitor</th>
-                        <th className="px-6 py-4 text-center">Pld</th>
-                        <th className="px-6 py-4 text-right text-accent-blue">Pts</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {standings.map((team: any, idx: number) => (
-                        <motion.tr
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.05 }}
-                          key={team.id}
-                          className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="px-6 py-4 font-black">
-                            <span className={idx < 3 ? 'text-accent-blue' : ''}>{idx + 1}</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden">
-                                {team.avatar_url ? (
-                                  <img src={team.avatar_url} className="w-full h-full object-cover" />
-                                ) : (
-                                  <Users size={14} className="text-muted-foreground" />
-                                )}
-                              </div>
-                              <span className="font-bold truncate max-w-[150px]">{team.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-center font-bold text-muted-foreground">{team.pld}</td>
-                          <td className="px-6 py-4 text-right font-black text-accent-blue text-lg">{team.pts}</td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
+          {/* Match Schedule with Round Tabs */}
+          <div className="space-y-8">
+            <div className="flex flex-col items-center gap-6">
+              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-3">
+                <Calendar size={18} className="text-accent-blue" /> 
+                Match Schedule
+              </h4>
+              
+              {rounds.length > 1 && (
+                <div className="flex flex-wrap justify-center gap-2 p-1.5 bg-muted/20 rounded-2xl border border-border/50 w-fit">
+                  {rounds.map((round) => (
+                    <button
+                      key={round}
+                      onClick={() => setActiveRoundIdx(round)}
+                      className={`px-5 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                        currentRoundIdx === round 
+                          ? 'bg-white/10 text-white border border-white/20' 
+                          : 'text-muted-foreground hover:text-white'
+                      }`}
+                    >
+                      Round {round + 1}
+                    </button>
+                  ))}
                 </div>
+              )}
+            </div>
 
-                {/* Group Schedule */}
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 flex items-center gap-2">
-                    <Calendar size={12} /> {groupName} Match Schedule
-                  </h4>
-                  <div className="grid grid-cols-1 gap-4">
-                    {groupMatches.map((m, i) => renderMatchCard(m, i, 0, 0))}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <AnimatePresence mode="wait">
+                {roundMatches.map((m, i) => (
+                  <motion.div
+                    key={m.id}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    transition={{ delay: i * 0.05 }}
+                  >
+                    {renderMatchCard(m, i, 0, 0)}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
       </div>
     )
