@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Trophy, Plus, Settings, BarChart3, Image as ImageIcon, Layout, FileText, Share2, Gamepad2, Trophy as TrophyIcon, Users, User, GitFork, Shuffle, TrendingUp, Edit3, Upload, Sparkles, Wand2, Trash2, X } from 'lucide-react'
+import { Trophy, Plus, Settings, BarChart3, Image as ImageIcon, Layout, FileText, Share2, Gamepad2, Trophy as TrophyIcon, Users, User, GitFork, Shuffle, TrendingUp, Edit3, Upload, Sparkles, Wand2, Trash2, X, ShieldAlert } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createTournament, deleteTournament } from '@/actions/profile'
@@ -42,6 +42,7 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
   const [tieBreakerRule, setTieBreakerRule] = useState('h2h')
   const [teamSize, setTeamSize] = useState('1')
   const [esportGame, setEsportGame] = useState('')
+  const [participantLimit, setParticipantLimit] = useState<number | ''>('')
   
   const router = useRouter()
 
@@ -339,6 +340,37 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                     { value: 'hybrid', label: 'Two-Stage / Hybrid', emoji: '🔥' },
                   ]}
                 />
+                
+                {bracketStructure === 'round_robin' && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Number of Groups</label>
+                    <input 
+                      name="groupCount" 
+                      type="number" 
+                      value={groupCount} 
+                      onChange={(e) => setGroupCount(parseInt(e.target.value) || 1)} 
+                      min={1} 
+                      className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none focus:ring-2 focus:ring-accent-blue/50" 
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Participant Limit</label>
+                  <input 
+                    name="participantLimit" 
+                    type="number" 
+                    value={participantLimit}
+                    onChange={(e) => setParticipantLimit(e.target.value === '' ? '' : parseInt(e.target.value))}
+                    placeholder="Unlimited" 
+                    className="w-full rounded-xl border border-border bg-card p-3 font-bold text-sm outline-none focus:ring-2 focus:ring-accent-blue/50" 
+                  />
+                  {bracketStructure === 'round_robin' && participantLimit !== '' && participantLimit < groupCount * 2 && (
+                    <p className="text-[10px] font-bold text-amber-500 mt-1 flex items-center gap-1">
+                      <ShieldAlert size={10} /> At least {groupCount * 2} players recommended for {groupCount} groups
+                    </p>
+                  )}
+                </div>
                 <ModernSelect
                   label="Default Match Format"
                   name="matchFormat"
@@ -495,10 +527,6 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
             <div className="p-6 rounded-3xl border border-border bg-card shadow-sm space-y-6">
                <h4 className="font-black text-lg">Registration & Schedule</h4>
                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Participant Limit</label>
-                   <input name="participantLimit" type="number" placeholder="Leave empty for unlimited" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
-                 </div>
                  <div className="space-y-2">
                    <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Entry Fee (Optional)</label>
                    <input name="entryFee" placeholder="e.g. Free or 10 GEL" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />

@@ -138,7 +138,14 @@ export default async function TournamentDetailsPage({
               <span className="inline-block px-3 py-1 rounded-md bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest mb-3 shadow-lg shadow-accent-blue/20">
                 {tournament.category} • {tournament.participation_mode === 'team' ? `${tournament.team_size}v${tournament.team_size}` : '1v1'}
               </span>
-              <h1 className="text-5xl md:text-6xl font-black text-white uppercase tracking-tight text-shadow-sm">{tournament.name}</h1>
+              <h1 className="text-5xl md:text-6xl font-black text-white uppercase tracking-tight text-shadow-sm">
+                {tournament.name}
+                {tournament.category === 'esport' && tournament.settings?.game && (
+                  <span className="block text-2xl md:text-3xl text-accent-blue/80 mt-2 font-black uppercase">
+                    {tournament.settings.game}
+                  </span>
+                )}
+              </h1>
               <div className="flex flex-wrap gap-4 mt-4">
                 {tournament.platform && (
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
@@ -268,6 +275,31 @@ export default async function TournamentDetailsPage({
                     <Calendar size={18} className="text-emerald-500" />
                     Open for Registration
                   </div>
+                </div>
+
+                {/* Schedule & Deadlines */}
+                <div className="space-y-4 mb-8 p-6 rounded-2xl bg-muted/50 border border-border/50">
+                   <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Event Timeline</h4>
+                   
+                   <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Reg. Starts</span>
+                         <span className="text-xs font-black">{tournament.registration_start_date ? new Date(tournament.registration_start_date).toLocaleDateString() : 'TBD'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Reg. Ends</span>
+                         <span className="text-xs font-black">{tournament.registration_end_date ? new Date(tournament.registration_end_date).toLocaleDateString() : 'TBD'}</span>
+                      </div>
+                      <div className="h-px bg-border/50 my-2" />
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] font-bold text-muted-foreground uppercase text-accent-blue">Kick-off</span>
+                         <span className="text-xs font-black text-accent-blue">{tournament.start_date ? new Date(tournament.start_date).toLocaleDateString() : 'TBD'}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Ends</span>
+                         <span className="text-xs font-black">{tournament.end_date ? new Date(tournament.end_date).toLocaleDateString() : 'TBD'}</span>
+                      </div>
+                   </div>
                 </div>
 
                 {!user ? (
