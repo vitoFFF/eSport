@@ -300,6 +300,7 @@ export default function BracketView({
     const isWinnerAway = (match.winner_team_id && match.winner_team_id === match.away_team_id) || (match.winner_player_id && match.winner_player_id === match.away_player_id)
     const isConfirmed = match.status === 'confirmed'
     const isLive = match.status === 'in_progress'
+    const isDraw = isConfirmed && match.home_score === match.away_score && match.home_score !== null
 
     return (
       <div key={match.id} className="relative group" style={{ height: CARD_HEIGHT }}>
@@ -308,60 +309,81 @@ export default function BracketView({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: (roundIdx * 0.1) + (matchIdx * 0.05) }}
           onClick={() => isOrganizer && !isSkeleton && handleEditClick(match)}
-          className={`relative z-10 w-full h-full rounded-[1.25rem] border ${isLive ? 'border-accent-blue/50 ring-1 ring-accent-blue/20' : 'border-white/10'} bg-card/40 backdrop-blur-xl shadow-3d hover:border-accent-blue/50 transition-all duration-500 overflow-hidden flex flex-col luxury-border-glow shimmer-glint ${isSkeleton ? 'opacity-30 grayscale' : ''} ${isOrganizer && !isSkeleton ? 'cursor-pointer hover:translate-y-[-2px]' : ''}`}
+          className={`relative z-10 w-full h-full rounded-[1.5rem] border ${
+            isLive ? 'border-accent-blue/50 ring-1 ring-accent-blue/20 bg-accent-blue/5' : 
+            isDraw ? 'border-amber-500/30 bg-amber-500/5' :
+            'border-white/10 bg-card/40'
+          } backdrop-blur-xl shadow-3d hover:border-accent-blue/50 transition-all duration-500 overflow-hidden flex flex-col luxury-border-glow shimmer-glint ${isSkeleton ? 'opacity-30 grayscale' : ''} ${isOrganizer && !isSkeleton ? 'cursor-pointer hover:translate-y-[-2px]' : ''}`}
         >
-          {isLive && (
-            <div className="absolute top-2 left-2 flex items-center gap-1.5 z-20 bg-accent-blue/10 px-2 py-0.5 rounded-full border border-accent-blue/20">
-              <div className="h-1.5 w-1.5 rounded-full bg-accent-blue animate-pulse" />
-              <span className="text-[8px] font-black uppercase tracking-widest text-accent-blue">Live</span>
-            </div>
-          )}
+          {/* Status Badges */}
+          <div className="absolute top-2 left-2 flex items-center gap-2 z-20">
+            {isLive && (
+              <div className="flex items-center gap-1.5 bg-accent-blue/10 px-2 py-0.5 rounded-full border border-accent-blue/20">
+                <div className="h-1.5 w-1.5 rounded-full bg-accent-blue animate-pulse" />
+                <span className="text-[8px] font-black uppercase tracking-widest text-accent-blue">Live</span>
+              </div>
+            )}
+            {isDraw && (
+              <div className="bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                <span className="text-[8px] font-black uppercase tracking-widest text-amber-500">Draw</span>
+              </div>
+            )}
+          </div>
+
           {isOrganizer && !isSkeleton && (
-            <div className="absolute top-2 right-2 p-1 rounded-md bg-accent-blue/10 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Edit3 size={10} className="text-accent-blue" />
+            <div className="absolute top-2 right-2 p-1.5 rounded-lg bg-accent-blue/10 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110">
+              <Edit3 size={12} className="text-accent-blue" />
             </div>
           )}
 
           {/* Home Team */}
-          <div className={`flex-1 px-4 flex items-center justify-between border-b border-white/5 transition-all duration-500 ${isWinnerHome ? 'bg-emerald-500/5' : isConfirmed ? 'opacity-60' : ''}`}>
-            <div className="flex items-center gap-3">
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerHome ? 'ring-2 ring-emerald-500/50' : 'bg-muted/50'}`}>
+          <div className={`flex-1 px-5 flex items-center justify-between border-b border-white/5 transition-all duration-500 ${isWinnerHome ? 'bg-emerald-500/10' : isConfirmed ? 'opacity-70' : ''}`}>
+            <div className="flex items-center gap-4">
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerHome ? 'ring-2 ring-emerald-500/50' : 'bg-muted/50'}`}>
                 {match.home_team?.avatar_url ? (
                   <img src={match.home_team.avatar_url} className="w-full h-full object-cover" />
                 ) : (
-                  <Users size={14} className="text-muted-foreground/50" />
+                  <Users size={16} className="text-muted-foreground/30" />
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className={`text-[13px] font-black tracking-tight truncate max-w-[120px] uppercase italic ${isWinnerHome ? 'text-white' : 'text-muted-foreground'}`}>
+                <span className={`text-sm font-black tracking-tight truncate max-w-[130px] uppercase italic ${isWinnerHome ? 'text-white' : isDraw ? 'text-amber-500/80' : 'text-muted-foreground/90'}`}>
                   {match.home_team?.name || 'TBD'}
                 </span>
-                {isWinnerHome && <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">Winner</span>}
+                {isWinnerHome && <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-0.5">Winner</span>}
               </div>
             </div>
-            <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm transition-all duration-500 ${isWinnerHome ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105' : 'bg-black/20 text-muted-foreground'}`}>
+            <div className={`h-9 w-11 flex items-center justify-center rounded-xl font-black text-base transition-all duration-500 ${
+              isWinnerHome ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-110' : 
+              isDraw ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' :
+              'bg-white/5 text-muted-foreground/50'
+            }`}>
               {match.home_score ?? '-'}
             </div>
           </div>
 
           {/* Away Team */}
-          <div className={`flex-1 px-4 flex items-center justify-between transition-all duration-500 ${isWinnerAway ? 'bg-emerald-500/5' : isConfirmed ? 'opacity-60' : ''}`}>
-            <div className="flex items-center gap-3">
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerAway ? 'ring-2 ring-emerald-500/50' : 'bg-muted/50'}`}>
+          <div className={`flex-1 px-5 flex items-center justify-between transition-all duration-500 ${isWinnerAway ? 'bg-emerald-500/10' : isConfirmed ? 'opacity-70' : ''}`}>
+            <div className="flex items-center gap-4">
+              <div className={`h-10 w-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerAway ? 'ring-2 ring-emerald-500/50' : 'bg-muted/50'}`}>
                 {match.away_team?.avatar_url ? (
                   <img src={match.away_team.avatar_url} className="w-full h-full object-cover" />
                 ) : (
-                  <Users size={14} className="text-muted-foreground/50" />
+                  <Users size={16} className="text-muted-foreground/30" />
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className={`text-[13px] font-black tracking-tight truncate max-w-[120px] uppercase italic ${isWinnerAway ? 'text-white' : 'text-muted-foreground'}`}>
+                <span className={`text-sm font-black tracking-tight truncate max-w-[130px] uppercase italic ${isWinnerAway ? 'text-white' : isDraw ? 'text-amber-500/80' : 'text-muted-foreground/90'}`}>
                   {match.away_team?.name || 'TBD'}
                 </span>
-                {isWinnerAway && <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none">Winner</span>}
+                {isWinnerAway && <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-0.5">Winner</span>}
               </div>
             </div>
-            <div className={`h-8 w-10 flex items-center justify-center rounded-lg font-black text-sm transition-all duration-500 ${isWinnerAway ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] scale-105' : 'bg-black/20 text-muted-foreground'}`}>
+            <div className={`h-9 w-11 flex items-center justify-center rounded-xl font-black text-base transition-all duration-500 ${
+              isWinnerAway ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-110' : 
+              isDraw ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' :
+              'bg-white/5 text-muted-foreground/50'
+            }`}>
               {match.away_score ?? '-'}
             </div>
           </div>
@@ -372,7 +394,6 @@ export default function BracketView({
       </div>
     )
   }
-
   const renderSingleElimination = () => {
     const rounds = displayMatches.filter(m => m.details?.bracket === 'winners' || (!m.details?.bracket && m.bracket_round < 50))
     const thirdPlaceMatch = displayMatches.find(m => m.details?.bracket === 'third_place' || m.bracket_round === 99)
@@ -742,16 +763,16 @@ export default function BracketView({
                 Match Schedule
               </h4>
               
-              {rounds.length > 1 && (
-                <div className="flex flex-wrap justify-center gap-2 p-1.5 bg-muted/20 rounded-2xl border border-border/50 w-fit">
+            {rounds.length > 1 && (
+                <div className="flex flex-wrap justify-center gap-3 p-2 bg-white/5 rounded-[2rem] border border-white/10 w-fit backdrop-blur-md shadow-inner">
                   {rounds.map((round) => (
                     <button
                       key={round}
                       onClick={() => setActiveRoundIdx(round)}
-                      className={`px-5 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all ${
+                      className={`px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 ${
                         currentRoundIdx === round 
-                          ? 'bg-white/10 text-white border border-white/20' 
-                          : 'text-muted-foreground hover:text-white'
+                          ? 'bg-gradient-to-r from-accent-blue to-accent-purple text-white shadow-lg shadow-accent-blue/30 scale-105' 
+                          : 'text-muted-foreground hover:text-white hover:bg-white/5'
                       }`}
                     >
                       Round {round + 1}
@@ -761,21 +782,30 @@ export default function BracketView({
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-5xl mx-auto px-4">
               <AnimatePresence mode="wait">
                 {roundMatches.length > 0 ? roundMatches.map((m, i) => (
                   <motion.div
                     key={m.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
-                    transition={{ delay: i * 0.05 }}
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                    transition={{ 
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 30,
+                      delay: i * 0.1 
+                    }}
+                    className="relative"
                   >
                     {renderMatchCard(m, i, 0, 0)}
                   </motion.div>
                 )) : (
-                  <div className="col-span-full py-12 text-center border border-dashed border-border rounded-3xl opacity-50">
-                    <p className="text-xs font-black uppercase tracking-widest">No matches in this round</p>
+                  <div className="col-span-full py-20 text-center border border-dashed border-white/10 rounded-[3rem] bg-white/5 backdrop-blur-sm">
+                    <div className="h-16 w-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
+                      <Calendar className="text-muted-foreground/30" size={24} />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50">No matches scheduled for this round</p>
                   </div>
                 )}
               </AnimatePresence>

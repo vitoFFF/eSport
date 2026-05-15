@@ -144,11 +144,24 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
       }
   }
 
+  // Calculate final scores to display
+  // For League formats, we often want to show the total points/goals (especially in BO1)
+  let finalHomeScore = homeWins;
+  let finalAwayScore = awayWins;
+
+  if (isLeagueFormat) {
+      // If it's a BO1, use the actual scores from the first game
+      if (threshold === 1 && games[0]) {
+          finalHomeScore = games[0].home_score;
+          finalAwayScore = games[0].away_score;
+      }
+  }
+
   const { error } = await supabase
     .from('matches')
     .update({
-      home_score: homeWins,
-      away_score: awayWins,
+      home_score: finalHomeScore,
+      away_score: finalAwayScore,
       winner_team_id: winnerTeamId,
       winner_player_id: winnerPlayerId,
       status: isCompleted ? 'confirmed' : 'in_progress',
