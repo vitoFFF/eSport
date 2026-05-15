@@ -111,11 +111,14 @@ export default async function ProfilePage({ searchParams }: { searchParams: { ta
     }
   }
 
+  let organizerTournaments: any[] = [];
   if (profile.role === "organizer") {
     const { data: tournamentData } = await supabase
       .from("tournaments")
       .select("*")
-      .eq("organizer_id", user.id);
+      .eq("organizer_id", user.id)
+      .order('created_at', { ascending: false });
+    organizerTournaments = tournamentData || [];
   }
 
   // Always fetch tournaments so sport-specific views can display them
@@ -163,7 +166,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: { ta
         <>
           {profile.role === "player" && <PlayerProfile profile={profile} playerTeams={playerTeams} teamInvites={teamInvites} />}
           {profile.role === "manager" && <OrganizationManager profile={profile} organization={organization} teams={teams} />}
-          {profile.role === "organizer" && <OrganizerDashboard profile={profile} tournaments={[]} />}
+          {profile.role === "organizer" && <OrganizerDashboard profile={profile} tournaments={organizerTournaments} />}
         </>
       )}
       

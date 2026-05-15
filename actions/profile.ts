@@ -175,6 +175,7 @@ export async function createTournament(formData: FormData) {
   const stageParticipants = parseInt(formData.get('stageParticipants') as string || '8')
   const promotionCount = parseInt(formData.get('promotionCount') as string || '2')
   const groupCount = parseInt(formData.get('groupCount') as string || '0')
+  const game = formData.get('game') as string
   const pointPolicy = JSON.parse(formData.get('pointPolicy') as string || '{"1st": 500, "2nd": 200}')
 
   const { data, error } = await supabase
@@ -212,7 +213,8 @@ export async function createTournament(formData: FormData) {
         stage_participants_count: stageParticipants,
         match_format: matchFormat,
         promotion_count: promotionCount,
-        group_count: groupCount
+        group_count: groupCount,
+        game: game
       }
     })
     .select()

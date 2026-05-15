@@ -41,6 +41,7 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
   const [scoreReportingMethod, setScoreReportingMethod] = useState('admins_only')
   const [tieBreakerRule, setTieBreakerRule] = useState('h2h')
   const [teamSize, setTeamSize] = useState('1')
+  const [esportGame, setEsportGame] = useState('')
   
   const router = useRouter()
 
@@ -248,87 +249,9 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                 <input name="prizePool" placeholder="$10,000 USD" className="w-full rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
               </div>
               
-              <div className="space-y-2">
-                <ModernSelect
-                  label="Platform / Surface"
-                  name="platform"
-                  value={platform}
-                  onChange={setPlatform}
-                  options={[
-                    { value: 'PC', label: 'PC', emoji: '💻' },
-                    { value: 'PS5', label: 'PlayStation 5', emoji: '🎮' },
-                    { value: 'Xbox', label: 'Xbox', emoji: '🕹️' },
-                    { value: 'Crossplay', label: 'Crossplay', emoji: '🌐' },
-                    { value: 'Turf', label: 'Turf (Sports)', emoji: '🏟️' },
-                  ]}
-                />
               </div>
 
-              <div className="space-y-2">
-                <ModernSelect
-                  label="Location Type"
-                  name="locationType"
-                  value={locationType}
-                  onChange={setLocationType}
-                  options={[
-                    { value: 'online', label: 'Online', emoji: '🌐' },
-                    { value: 'lan_offline', label: 'LAN / Offline', emoji: '📍' },
-                  ]}
-                />
-              </div>
-
-              {locationType === 'online' ? (
-                <div className="space-y-2 col-span-1 md:col-span-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Discord / Twitch Link</label>
-                  <input name="locationUrl" placeholder="https://discord.gg/..." className="w-full rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
-                </div>
-              ) : (
-                <div className="space-y-2 col-span-1 md:col-span-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Physical Address</label>
-                  <input name="locationAddress" placeholder="e.g. Arena Stadium, Tbilisi" className="w-full rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Description & Rules</label>
-              <div className="rounded-2xl overflow-hidden border border-border bg-muted/30">
-                <ReactQuill theme="snow" value={description} onChange={setDescription} className="h-48 mb-12" />
-              </div>
-            </div>
-
-            {/* Step 2: Registration & Schedule */}
-            <div className="p-6 rounded-3xl border border-border bg-card shadow-sm space-y-6">
-               <h4 className="font-black text-lg">Registration & Schedule</h4>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Participant Limit</label>
-                   <input name="participantLimit" type="number" placeholder="Leave empty for unlimited" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
-                 </div>
-                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Entry Fee (Optional)</label>
-                   <input name="entryFee" placeholder="e.g. Free or 10 GEL" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
-                 </div>
-                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Registration Start Date</label>
-                   <input name="registrationStartDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
-                 </div>
-                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Registration End Date</label>
-                   <input name="registrationEndDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
-                 </div>
-                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Tournament Start Date</label>
-                   <input name="startDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
-                 </div>
-                 <div className="space-y-2">
-                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Tournament End Date</label>
-                   <input name="endDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
-                 </div>
-               </div>
-            </div>
-
-            {/* Step 3 & 4: Format & Advanced Settings */}
+            {/* Step 3 & 4: Format & Advanced Settings (MOVED UP) */}
             <div className="p-6 rounded-3xl border border-border bg-accent-blue/5 space-y-6">
               <h4 className="font-black text-lg">Format & Advanced Settings</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -344,6 +267,33 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                     { value: 'padel', label: 'Padel', emoji: '🏸' },
                   ]}
                 />
+
+                {category === 'esport' && (
+                  <ModernSelect
+                    label="Select Esport Game"
+                    name="game"
+                    value={esportGame}
+                    onChange={setEsportGame}
+                    options={[
+                      { value: 'CS2', label: 'Counter-Strike 2 (CS2)', emoji: '🔫' },
+                      { value: 'Valorant', label: 'Valorant', emoji: '🎯' },
+                      { value: 'Overwatch 2', label: 'Overwatch 2', emoji: '🛡️' },
+                      { value: 'LoL', label: 'League of Legends (LoL)', emoji: '⚔️' },
+                      { value: 'Dota 2', label: 'Dota 2', emoji: '🌌' },
+                      { value: 'MLBB', label: 'Mobile Legends: Bang Bang', emoji: '📱' },
+                      { value: 'PUBGM', label: 'PUBG Mobile', emoji: '🪂' },
+                      { value: 'Apex', label: 'Apex Legends', emoji: '🏃' },
+                      { value: 'Fortnite', label: 'Fortnite', emoji: '🏗️' },
+                      { value: 'Warzone', label: 'Call of Duty: Warzone', emoji: '🚁' },
+                      { value: 'Tekken 8', label: 'Tekken 8', emoji: '🥋' },
+                      { value: 'EAFC', label: 'EA Sports FC', emoji: '⚽' },
+                      { value: 'Rocket League', label: 'Rocket League', emoji: '🏎️' },
+                      { value: 'NBA2K', label: 'NBA 2K', emoji: '🏀' },
+                      { value: 'eFootball', label: 'eFootball', emoji: '⚽' },
+                    ]}
+                  />
+                )}
+
                 <ModernSelect
                   label="Participation Mode"
                   name="participationMode"
@@ -490,6 +440,88 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                 )}
               </div>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <ModernSelect
+                  label="Platform / Surface"
+                  name="platform"
+                  value={platform}
+                  onChange={setPlatform}
+                  options={[
+                    { value: 'PC', label: 'PC', emoji: '💻' },
+                    { value: 'PS5', label: 'PlayStation 5', emoji: '🎮' },
+                    { value: 'Xbox', label: 'Xbox', emoji: '🕹️' },
+                    { value: 'Crossplay', label: 'Crossplay', emoji: '🌐' },
+                    { value: 'Turf', label: 'Turf (Sports)', emoji: '🏟️' },
+                  ]}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <ModernSelect
+                  label="Location Type"
+                  name="locationType"
+                  value={locationType}
+                  onChange={setLocationType}
+                  options={[
+                    { value: 'online', label: 'Online', emoji: '🌐' },
+                    { value: 'lan_offline', label: 'LAN / Offline', emoji: '📍' },
+                  ]}
+                />
+              </div>
+
+              {locationType === 'online' ? (
+                <div className="space-y-2 col-span-1 md:col-span-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Discord / Twitch Link</label>
+                  <input name="locationUrl" placeholder="https://discord.gg/..." className="w-full rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                </div>
+              ) : (
+                <div className="space-y-2 col-span-1 md:col-span-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Physical Address</label>
+                  <input name="locationAddress" placeholder="e.g. Arena Stadium, Tbilisi" className="w-full rounded-2xl border border-border bg-muted/30 p-4 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Description & Rules</label>
+              <div className="rounded-2xl overflow-hidden border border-border bg-muted/30">
+                <ReactQuill theme="snow" value={description} onChange={setDescription} className="h-48 mb-12" />
+              </div>
+            </div>
+
+            {/* Step 2: Registration & Schedule */}
+            <div className="p-6 rounded-3xl border border-border bg-card shadow-sm space-y-6">
+               <h4 className="font-black text-lg">Registration & Schedule</h4>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Participant Limit</label>
+                   <input name="participantLimit" type="number" placeholder="Leave empty for unlimited" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Entry Fee (Optional)</label>
+                   <input name="entryFee" placeholder="e.g. Free or 10 GEL" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Registration Start Date</label>
+                   <input name="registrationStartDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Registration End Date</label>
+                   <input name="registrationEndDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Tournament Start Date</label>
+                   <input name="startDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+                 <div className="space-y-2">
+                   <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Tournament End Date</label>
+                   <input name="endDate" type="datetime-local" className="w-full rounded-xl border border-border bg-muted/30 p-3 text-sm focus:ring-2 focus:ring-accent-blue/50 outline-none" />
+                 </div>
+               </div>
+            </div>
+
 
             {/* Banner Selection */}
             <div className="space-y-4">
