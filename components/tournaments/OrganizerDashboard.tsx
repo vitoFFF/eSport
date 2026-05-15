@@ -389,6 +389,9 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                     { value: 'bo1', label: 'Best of 1', emoji: '1️⃣' },
                     { value: 'bo3', label: 'Best of 3', emoji: '3️⃣' },
                     { value: 'bo5', label: 'Best of 5', emoji: '5️⃣' },
+                    ...(bracketStructure === 'round_robin' ? [
+                      { value: 'home_away', label: 'Home and Away', emoji: '🏠' }
+                    ] : [])
                   ]}
                 />
                 

@@ -407,61 +407,64 @@ export async function generateBracketMatches(tournamentId: string) {
             rounds: []
         };
 
-        const isOdd = groupRegs.length % 2 !== 0;
+        const isHomeAway = tournament.settings?.match_format === 'home_away';
+        const numCycles = isHomeAway ? 2 : 1;
         const players = [...groupRegs];
-        if (isOdd) players.push(null); // Dummy player for BYE
+        const isOdd = players.length % 2 !== 0;
+        if (isOdd) players.push(null);
         
         const n = players.length;
-        const totalRounds = n - 1;
+        const roundsPerCycle = n - 1;
         const matchesPerRound = n / 2;
 
-        for (let r = 0; r < totalRounds; r++) {
-            const roundObj: any = {
-                round_index: r,
-                matches: []
-            };
+        for (let cycle = 0; cycle < numCycles; cycle++) {
+            const currentPlayers = [...players];
+            for (let r = 0; r < roundsPerCycle; r++) {
+                const roundIdxInCycle = r;
+                const absoluteRoundIdx = (cycle * roundsPerCycle) + r;
 
-            for (let i = 0; i < matchesPerRound; i++) {
-                const home = players[i];
-                const away = players[n - 1 - i];
-                
-                const matchData: any = {
-                    tournament_id: tournamentId,
-                    bracket_round: gIndex, // Overloading bracket_round for group index in DB for now, but also in details
-                    match_order: matchesToInsert.length,
-                    status: (home === null || away === null) ? 'confirmed' : 'pending',
-                    home_team_id: home?.team_id || null,
-                    home_player_id: home?.player_id || null,
-                    away_team_id: away?.team_id || null,
-                    away_player_id: away?.player_id || null,
-                    details: { 
-                        bracket: structure, 
-                        group_index: gIndex, 
-                        rr_round: r,
-                        is_bye: home === null || away === null
-                    }
-                };
+                for (let i = 0; i < matchesPerRound; i++) {
+                    let home = currentPlayers[i];
+                    let away = currentPlayers[n - 1 - i];
 
-                // If it's a bye, auto-confirm the winner
-                if (home === null || away === null) {
-                    const winner = home || away;
-                    if (winner) {
-                        matchData.winner_team_id = winner.team_id;
-                        matchData.winner_player_id = winner.player_id;
-                        matchData.home_score = home ? 1 : 0;
-                        matchData.away_score = away ? 1 : 0;
+                    // Swap home/away for second cycle
+                    if (cycle === 1) {
+                        [home, away] = [away, home];
                     }
+                    
+                    const matchData: any = {
+                        tournament_id: tournamentId,
+                        bracket_round: gIndex,
+                        match_order: matchesToInsert.length,
+                        status: (home === null || away === null) ? 'confirmed' : 'pending',
+                        home_team_id: home?.team_id || null,
+                        home_player_id: home?.player_id || null,
+                        away_team_id: away?.team_id || null,
+                        away_player_id: away?.player_id || null,
+                        details: { 
+                            bracket: structure, 
+                            group_index: gIndex, 
+                            rr_round: absoluteRoundIdx,
+                            is_bye: home === null || away === null
+                        }
+                    };
+
+                    if (home === null || away === null) {
+                        const winner = home || away;
+                        if (winner) {
+                            matchData.winner_team_id = winner.team_id;
+                            matchData.winner_player_id = winner.player_id;
+                            matchData.home_score = home ? 1 : 0;
+                            matchData.away_score = away ? 1 : 0;
+                        }
+                    }
+
+                    matchesToInsert.push(matchData);
                 }
-
-                matchesToInsert.push(matchData);
-                roundObj.matches.push(matchData);
+                // Circle rotation
+                currentPlayers.splice(1, 0, currentPlayers.pop() as any);
             }
-            groupObj.rounds.push(roundObj);
-            
-            // Rotate players for next round (Circle algorithm)
-            players.splice(1, 0, players.pop() as any);
         }
-        structuredGroups.push(groupObj);
     });
 
     // Attach structured groups to the final return if needed
