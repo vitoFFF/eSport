@@ -384,7 +384,7 @@ export async function generateBracketMatches(tournamentId: string) {
 
   } else if (structure === 'round_robin' || structure === 'group_stage' || structure === 'hybrid') {
     const requestedGroupCount = tournament.settings?.group_count ? parseInt(tournament.settings.group_count) : 0;
-    const groupCount = (structure === 'group_stage' || structure === 'hybrid') 
+    const groupCount = (structure === 'group_stage' || structure === 'hybrid' || structure === 'round_robin') 
       ? (requestedGroupCount > 0 ? requestedGroupCount : Math.max(1, Math.ceil(registrations.length / 4))) 
       : 1;
       

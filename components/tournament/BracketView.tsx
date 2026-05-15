@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Trophy, Edit3, X, Check, Loader2, Sparkles, LayoutGrid } from 'lucide-react'
+import { Users, Trophy, Edit3, X, Check, Loader2, Sparkles, LayoutGrid, Calendar } from 'lucide-react'
 import { updateMatchScore, generateBracketMatches, generateNextSwissRound, GameData } from '@/actions/matches'
  
 const CARD_HEIGHT = 120
@@ -580,106 +580,127 @@ export default function BracketView({
   }
 
   const renderRoundRobin = () => {
-    // Calculate standings from matches
-    const stats = normalizedParticipants.reduce((acc, p) => {
-      acc[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, pld: 0, w: 0, d: 0, l: 0, pts: 0, diff: 0 }
-      return acc
-    }, {} as any)
-
-    matches.forEach(m => {
-      if (m.status === 'confirmed') {
-        const homeId = m.home_team_id || m.home_player_id
-        const awayId = m.away_team_id || m.away_player_id
-        if (!stats[homeId] || !stats[awayId]) return
-
-        stats[homeId].pld++
-        stats[awayId].pld++
-
-        const homeScore = m.home_score || 0
-        const awayScore = m.away_score || 0
-        stats[homeId].diff += (homeScore - awayScore)
-        stats[awayId].diff += (awayScore - homeScore)
-
-        if (homeScore > awayScore) {
-          stats[homeId].w++
-          stats[homeId].pts += 3
-          stats[awayId].l++
-        } else if (awayScore > homeScore) {
-          stats[awayId].w++
-          stats[awayId].pts += 3
-          stats[homeId].l++
-        } else {
-          stats[homeId].d++
-          stats[homeId].pts += 1
-          stats[awayId].d++
-          stats[awayId].pts += 1
-        }
-      }
-    })
-
-    const standings = Object.values(stats).sort((a: any, b: any) => {
-      if (b.pts !== a.pts) return b.pts - a.pts
-      return b.diff - a.diff // Differential tiebreaker
-    })
-
+    // Get unique group indices (bracket_round) from displayMatches
+    const groupIds = Array.from(new Set(displayMatches.map(m => m.bracket_round))).sort((a, b) => a - b)
+    
     return (
       <div className="w-full space-y-12">
-        <div className="rounded-2xl border border-border bg-card/50 overflow-hidden backdrop-blur-sm">
-          <table className="w-full text-sm text-left">
-            <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/50">
-              <tr>
-                <th className="px-6 py-4">Rank</th>
-                <th className="px-6 py-4">Competitor</th>
-                <th className="px-6 py-4 text-center">Pld</th>
-                <th className="px-6 py-4 text-center">W</th>
-                <th className="px-6 py-4 text-center">D</th>
-                <th className="px-6 py-4 text-center">L</th>
-                <th className="px-6 py-4 text-center">+/-</th>
-                <th className="px-6 py-4 text-right text-accent-blue">Pts</th>
-              </tr>
-            </thead>
-            <tbody>
-              {standings.map((team: any, idx: number) => (
-                <motion.tr
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  key={team.id}
-                  className="border-b border-border/50 hover:bg-muted/30 transition-colors"
-                >
-                  <td className="px-6 py-4 font-black">
-                    <span className={idx < 3 ? 'text-accent-blue' : ''}>{idx + 1}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden">
-                        {team.avatar_url ? (
-                          <img src={team.avatar_url} className="w-full h-full object-cover" />
-                        ) : (
-                          <Users size={14} className="text-muted-foreground" />
-                        )}
-                      </div>
-                      <span className="font-bold">{team.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-center font-bold text-muted-foreground">{team.pld}</td>
-                  <td className="px-6 py-4 text-center font-bold text-emerald-500">{team.w}</td>
-                  <td className="px-6 py-4 text-center font-bold text-amber-500">{team.d}</td>
-                  <td className="px-6 py-4 text-center font-bold text-red-500">{team.l}</td>
-                  <td className="px-6 py-4 text-center font-bold">{team.diff > 0 ? `+${team.diff}` : team.diff}</td>
-                  <td className="px-6 py-4 text-right font-black text-accent-blue text-lg">{team.pts}</td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <div className={`grid grid-cols-1 ${groupIds.length > 1 ? 'lg:grid-cols-2' : ''} gap-8`}>
+          {groupIds.map((groupIdx) => {
+            const groupMatches = displayMatches.filter(m => m.bracket_round === groupIdx)
+            const groupName = groupIds.length > 1 ? `Group ${String.fromCharCode(65 + groupIdx)}` : 'Standings'
+            
+            // Get unique participant IDs in this group from the matches
+            const participantIdsInGroup = new Set<string>()
+            groupMatches.forEach(m => {
+              if (m.home_team_id || m.home_player_id) participantIdsInGroup.add(m.home_team_id || m.home_player_id)
+              if (m.away_team_id || m.away_player_id) participantIdsInGroup.add(m.away_team_id || m.away_player_id)
+            })
 
-        {/* Schedule List */}
-        <div className="space-y-6">
-          <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground px-4">Match Schedule</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {matches.map((m, i) => renderMatchCard(m, i, 0, 0))}
-          </div>
+            const groupParticipants = normalizedParticipants.filter(p => participantIdsInGroup.has(p.id))
+            
+            const stats = groupParticipants.reduce((acc, p) => {
+              acc[p.id] = { id: p.id, name: p.name, avatar_url: p.avatar_url, pld: 0, w: 0, d: 0, l: 0, pts: 0, diff: 0 }
+              return acc
+            }, {} as any)
+
+            groupMatches.forEach(m => {
+              if (m.status === 'confirmed') {
+                const homeId = m.home_team_id || m.home_player_id
+                const awayId = m.away_team_id || m.away_player_id
+                if (!stats[homeId] || !stats[awayId]) return
+
+                stats[homeId].pld++
+                stats[awayId].pld++
+
+                const homeScore = m.home_score || 0
+                const awayScore = m.away_score || 0
+                stats[homeId].diff += (homeScore - awayScore)
+                stats[awayId].diff += (awayScore - homeScore)
+
+                if (homeScore > awayScore) {
+                  stats[homeId].w++
+                  stats[homeId].pts += 3
+                  stats[awayId].l++
+                } else if (awayScore > homeScore) {
+                  stats[awayId].w++
+                  stats[awayId].pts += 3
+                  stats[homeId].l++
+                } else {
+                  stats[homeId].d++
+                  stats[homeId].pts += 1
+                  stats[awayId].d++
+                  stats[awayId].pts += 1
+                }
+              }
+            })
+
+            const standings = Object.values(stats).sort((a: any, b: any) => {
+              if (b.pts !== a.pts) return b.pts - a.pts
+              return b.diff - a.diff // Differential tiebreaker
+            })
+
+            return (
+              <div key={groupIdx} className="space-y-6">
+                <div className="rounded-2xl border border-border bg-card/50 overflow-hidden backdrop-blur-sm">
+                  <div className="bg-muted/50 px-6 py-4 border-b border-border">
+                    <h4 className="text-sm font-black uppercase tracking-[0.2em] flex items-center gap-2">
+                       <LayoutGrid size={16} className="text-accent-blue" /> {groupName}
+                    </h4>
+                  </div>
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-[10px] font-black uppercase tracking-widest text-muted-foreground bg-muted/50">
+                      <tr>
+                        <th className="px-6 py-4">Rank</th>
+                        <th className="px-6 py-4">Competitor</th>
+                        <th className="px-6 py-4 text-center">Pld</th>
+                        <th className="px-6 py-4 text-right text-accent-blue">Pts</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {standings.map((team: any, idx: number) => (
+                        <motion.tr
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          key={team.id}
+                          className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="px-6 py-4 font-black">
+                            <span className={idx < 3 ? 'text-accent-blue' : ''}>{idx + 1}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0 border border-border overflow-hidden">
+                                {team.avatar_url ? (
+                                  <img src={team.avatar_url} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Users size={14} className="text-muted-foreground" />
+                                )}
+                              </div>
+                              <span className="font-bold truncate max-w-[150px]">{team.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center font-bold text-muted-foreground">{team.pld}</td>
+                          <td className="px-6 py-4 text-right font-black text-accent-blue text-lg">{team.pts}</td>
+                        </motion.tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Group Schedule */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-4 flex items-center gap-2">
+                    <Calendar size={12} /> {groupName} Match Schedule
+                  </h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    {groupMatches.map((m, i) => renderMatchCard(m, i, 0, 0))}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     )
