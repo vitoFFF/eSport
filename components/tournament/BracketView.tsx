@@ -320,11 +320,11 @@ export default function BracketView({
           onClick={() => canEdit && handleEditClick(match)}
           className={`relative z-10 w-full h-full rounded-[2.5rem] border transition-all duration-700 overflow-hidden flex flex-col group/card ${
             isLive ? 'border-accent-blue/30 bg-accent-blue/5 shadow-[0_30px_60px_-12px_rgba(37,99,235,0.15)]' : 
-            'border-white/40 border-t-white/80 bg-white/60 backdrop-blur-3xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.12)] hover:border-white/60 hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.18)]'
+            'border-border/40 border-t-white/10 bg-card/60 backdrop-blur-3xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.12)] hover:border-border/60 hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.18)]'
           } ${isSkeleton ? 'opacity-30 grayscale' : ''} ${canEdit ? 'cursor-pointer hover:-translate-y-2' : ''}`}
         >
           {/* Subtle Rim Light Glow */}
-          <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-b from-card/60 to-transparent pointer-events-none opacity-50" />
           {/* Decorative Gradient Background */}
           <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/5 via-transparent to-accent-purple/5 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700" />
           {/* Status Badges */}
@@ -358,15 +358,15 @@ export default function BracketView({
           {/* Home Team */}
           <div className={`flex-1 px-8 flex items-center justify-between relative transition-all duration-700 ${isWinnerHome ? 'bg-accent-blue/5' : ''}`}>
             <div className="flex items-center gap-5">
-              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 border transition-all duration-700 group-hover/card:scale-110 ${isWinnerHome ? 'border-accent-blue/20 shadow-md bg-white' : 'border-slate-100 bg-slate-50/50 shadow-inner'}`}>
+              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 border transition-all duration-700 group-hover/card:scale-110 ${isWinnerHome ? 'border-accent-blue/20 shadow-md bg-card' : 'border-border bg-muted/50 shadow-inner'}`}>
                 {match.home_team?.avatar_url ? (
                   <img src={match.home_team.avatar_url} className="w-full h-full object-cover" />
                 ) : (
-                  <Users size={22} className="text-slate-300" />
+                  <Users size={22} className="text-muted-foreground/40" />
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className={`text-[15px] font-bold tracking-tight truncate max-w-[150px] uppercase transition-colors ${isWinnerHome ? 'text-accent-blue' : isConfirmed && !isWinnerHome ? 'text-slate-400' : 'text-slate-900'}`}>
+                <span className={`text-[15px] font-bold tracking-tight truncate max-w-[150px] uppercase transition-colors ${isWinnerHome ? 'text-accent-blue' : isConfirmed && !isWinnerHome ? 'text-muted-foreground' : 'text-foreground'}`}>
                   {match.home_team?.name || 'TBD'}
                 </span>
                 {isWinnerHome && <span className="text-[9px] font-black text-accent-blue/50 uppercase tracking-[0.2em] leading-none mt-1.5">Winner</span>}
@@ -374,29 +374,29 @@ export default function BracketView({
             </div>
             <div className={`h-11 w-14 flex items-center justify-center rounded-2xl font-black text-xl transition-all duration-700 ${
               isWinnerHome ? 'bg-gradient-to-br from-accent-blue to-accent-purple text-white shadow-[0_12px_24px_-5px_rgba(37,99,235,0.3)] scale-110' : 
-              'bg-white text-slate-400 border border-slate-100 shadow-sm'
+              'bg-card text-muted-foreground border border-border shadow-sm'
             }`}>
               {match.home_score ?? '-'}
             </div>
           </div>
 
           {/* Central Separator */}
-          <div className="h-px w-full bg-slate-100/50 relative">
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 bg-white rounded-full border border-slate-100 text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] shadow-md z-10">VS</div>
+          <div className="h-px w-full bg-border/50 relative">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 bg-card rounded-full border border-border text-[9px] font-black text-muted-foreground/60 uppercase tracking-[0.3em] shadow-md z-10">VS</div>
           </div>
 
           {/* Away Team */}
           <div className={`flex-1 px-8 flex items-center justify-between transition-all duration-700 ${isWinnerAway ? 'bg-accent-blue/5' : ''}`}>
             <div className="flex items-center gap-5">
-              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 border transition-all duration-700 group-hover/card:scale-110 ${isWinnerAway ? 'border-accent-blue/20 shadow-md bg-white' : 'border-slate-100 bg-slate-50/50 shadow-inner'}`}>
+              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 border transition-all duration-700 group-hover/card:scale-110 ${isWinnerAway ? 'border-accent-blue/20 shadow-md bg-card' : 'border-border bg-muted/50 shadow-inner'}`}>
                 {match.away_team?.avatar_url ? (
                   <img src={match.away_team.avatar_url} className="w-full h-full object-cover" />
                 ) : (
-                  <Users size={22} className="text-slate-300" />
+                  <Users size={22} className="text-muted-foreground/40" />
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className={`text-[15px] font-bold tracking-tight truncate max-w-[150px] uppercase transition-colors ${isWinnerAway ? 'text-accent-blue' : isConfirmed && !isWinnerAway ? 'text-slate-400' : 'text-slate-900'}`}>
+                <span className={`text-[15px] font-bold tracking-tight truncate max-w-[150px] uppercase transition-colors ${isWinnerAway ? 'text-accent-blue' : isConfirmed && !isWinnerAway ? 'text-muted-foreground' : 'text-foreground'}`}>
                   {match.away_team?.name || 'TBD'}
                 </span>
                 {isWinnerAway && <span className="text-[9px] font-black text-accent-blue/60 uppercase tracking-[0.2em] leading-none mt-1.5">Winner</span>}
@@ -404,7 +404,7 @@ export default function BracketView({
             </div>
             <div className={`h-11 w-14 flex items-center justify-center rounded-2xl font-black text-xl transition-all duration-700 ${
               isWinnerAway ? 'bg-gradient-to-br from-accent-blue to-accent-purple text-white shadow-[0_12px_24px_-5px_rgba(37,99,235,0.3)] scale-110' : 
-              'bg-white text-slate-400 border border-slate-100 shadow-sm'
+              'bg-card text-muted-foreground border border-border shadow-sm'
             }`}>
               {match.away_score ?? '-'}
             </div>

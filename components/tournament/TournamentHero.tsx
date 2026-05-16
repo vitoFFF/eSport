@@ -11,10 +11,10 @@ interface TournamentHeroProps {
 }
 
 export default function TournamentHero({ tournament }: TournamentHeroProps) {
-  const { theme, resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
+  const isDark = mounted && resolvedTheme === 'dark'
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -119,13 +119,13 @@ export default function TournamentHero({ tournament }: TournamentHeroProps) {
       <div className="absolute inset-0 z-0">
         {/* Base Mesh Gradient */}
         <div className={`absolute inset-0 transition-opacity duration-700 ${isDark ? 'opacity-100' : 'opacity-40'}`}
-             style={{ background: isDark 
+             style={{ backgroundImage: isDark 
                ? 'radial-gradient(circle at 50% 50%, rgba(37,99,235,0.15) 0%, transparent 70%)' 
                : 'radial-gradient(circle at 50% 50%, rgba(37,99,235,0.08) 0%, transparent 70%)' 
              }} />
         
         <div className={`absolute inset-0 transition-opacity duration-700 ${isDark ? 'opacity-100' : 'opacity-30'}`}
-             style={{ background: isDark 
+             style={{ backgroundImage: isDark 
                ? 'radial-gradient(circle at 20% 30%, rgba(147,51,234,0.1) 0%, transparent 50%)' 
                : 'radial-gradient(circle at 20% 30%, rgba(147,51,234,0.05) 0%, transparent 50%)' 
              }} />
@@ -194,7 +194,7 @@ export default function TournamentHero({ tournament }: TournamentHeroProps) {
           >
             {[
               { icon: LayoutGrid, label: 'Platform', value: tournament.platform || 'Multi-Platform', color: 'blue' },
-              { icon: Calendar, label: 'Commences', value: tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : 'TBD', color: 'purple' },
+              { icon: Calendar, label: 'Commences', value: tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', timeZone: 'UTC' }) : 'TBD', color: 'purple' },
               { icon: Users, label: 'Format', value: tournament.participation_mode === 'team' ? `${tournament.team_size}v${tournament.team_size}` : '1v1 Duel', color: 'emerald' }
             ].map((item, i) => (
               <div key={i} className={`flex items-center gap-4 px-8 py-4 rounded-3xl border backdrop-blur-2xl shadow-xl transition-all hover:scale-105 ${isDark ? 'bg-white/5 border-white/10 hover:border-accent-blue/30' : 'bg-white border-slate-200 hover:border-accent-blue/20'}`}>
