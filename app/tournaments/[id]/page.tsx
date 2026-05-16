@@ -11,6 +11,7 @@ import ManualSeeding from "@/components/tournament/ManualSeeding";
 
 import CompetitorsList from "@/components/tournament/CompetitorsList";
 import RulesDescriptionView from "@/components/tournament/RulesDescriptionView";
+import TournamentHero from "@/components/tournament/TournamentHero";
 
 export default async function TournamentDetailsPage({
   params,
@@ -115,96 +116,11 @@ export default async function TournamentDetailsPage({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="w-full h-[600px] relative overflow-hidden bg-slate-950">
-        {/* Background Image with Parallax-like Overlay */}
-        {tournament.banner_url ? (
-          <div className="absolute inset-0">
-            <img src={tournament.banner_url} alt="Banner" className="w-full h-full object-cover opacity-60 scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent z-10" />
-            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/40 to-transparent z-10" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.1),transparent_50%)] z-10" />
-          </div>
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex items-center justify-center relative">
-             <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-             <Trophy className="text-accent-blue/10 h-64 w-64 animate-pulse" />
-          </div>
-        )}
+      <TournamentHero tournament={tournament} />
 
-        {/* Content Container */}
-        <div className="absolute bottom-36 left-12 md:left-20 z-20 max-w-5xl">
-            {/* Game Tag */}
-            <div className="flex items-center gap-4 mb-8">
-              <div className="px-5 py-2 rounded-xl bg-accent-blue/20 border border-accent-blue/30 text-accent-blue text-[11px] font-black uppercase tracking-[0.3em] backdrop-blur-xl shadow-[0_0_20px_rgba(37,99,235,0.2)]">
-                {tournament.settings?.game || (tournament.category === 'esport' ? 'Competitive' : tournament.category)}
-              </div>
-              <div className="h-px w-12 bg-white/20" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
-                {tournament.participation_mode === 'team' ? `${tournament.team_size}v${tournament.team_size}` : '1v1 Duel'}
-              </span>
-            </div>
-
-            {/* Title & Series */}
-            <div className="space-y-4 mb-10">
-              <h4 className="text-[13px] font-black text-accent-purple uppercase tracking-[0.5em] leading-none opacity-80 pl-2">
-                Official Masters Series 2026
-              </h4>
-              <h1 className="text-7xl md:text-9xl font-black text-white uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] leading-[0.85] italic">
-                {tournament.name}
-              </h1>
-            </div>
-
-            {/* Technical Details */}
-            <div className="flex flex-wrap gap-5">
-              <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-3xl shadow-xl hover:border-white/20 transition-all">
-                <div className="p-2 rounded-lg bg-accent-blue/20 text-accent-blue">
-                  <LayoutGrid size={18} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">Platform</span>
-                  <span className="text-xs font-black text-white uppercase tracking-widest">{tournament.platform || 'Multi-Platform'}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-3xl shadow-xl hover:border-white/20 transition-all">
-                <div className="p-2 rounded-lg bg-accent-purple/20 text-accent-purple">
-                  <Calendar size={18} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">Commences</span>
-                  <span className="text-xs font-black text-white uppercase tracking-widest">
-                    {tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'To Be Announced'}
-                  </span>
-                </div>
-              </div>
-
-              {tournament.status === 'active' && (
-                <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-3xl shadow-xl animate-pulse">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]" />
-                  <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Live Now</span>
-                </div>
-              )}
-            </div>
-        </div>
-
-        {/* Decorative Side Element */}
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 bg-gradient-to-l from-slate-950/40 to-transparent pointer-events-none hidden lg:block" />
-        <div className="absolute right-12 bottom-24 z-10 hidden lg:block">
-          <div className="flex flex-col items-end">
-            <span className="text-[10rem] font-black text-white/[0.03] leading-none select-none tracking-tighter uppercase">
-              {tournament.category}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="container mx-auto px-6 max-w-[90rem] -mt-24 relative z-20 pb-24">
+      <div className="w-full px-4 md:px-12 max-w-[1600px] mx-auto mt-12 relative z-20 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
           <div className="lg:col-span-2 space-y-8">
-            <RulesDescriptionView 
-              description={tournament.description} 
-              rules={tournament.rules} 
-            />
 
             {/* Tournament Format Info Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -245,7 +161,7 @@ export default async function TournamentDetailsPage({
           </div>
 
           <div>
-            <div className="sticky top-32 space-y-6">
+            <div className="sticky top-40 space-y-6">
               <div className="p-8 rounded-[2rem] border border-border bg-gradient-to-b from-card to-muted/30 shadow-2xl space-y-8">
                 <div className="space-y-6">
                   <div className="relative group overflow-hidden p-6 rounded-2xl bg-muted/30 border border-border/50">
