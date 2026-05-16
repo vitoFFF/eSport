@@ -109,7 +109,7 @@ export default function SportTournamentsView({ tournaments, activeSport, teams =
                   {/* Banner */}
                   <div className="aspect-[21/9] bg-muted relative overflow-hidden">
                     {tournament.banner_url ? (
-                      <img src={tournament.banner_url} alt={tournament.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <img src={tournament.banner_url} alt={tournament.name} className="w-full h-full object-cover transition-transform duration-700" />
                     ) : (
                       <div className={`w-full h-full bg-gradient-to-br ${meta.gradient} opacity-30 flex items-center justify-center`}>
                         <Trophy className="text-white/20" size={40} />

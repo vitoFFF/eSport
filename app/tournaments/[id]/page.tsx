@@ -175,29 +175,31 @@ export default async function TournamentDetailsPage({
                   </div>
                 </div>
 
-                {/* Schedule & Deadlines */}
-                <div className="p-6 rounded-3xl bg-card border border-border shadow-sm">
-                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-6 flex items-center gap-2">
-                      <Calendar size={12} className="text-accent-blue" /> Event Timeline
-                   </h4>
-                   
-                   <div className="space-y-4">
+                {/* Ultra-Minimalist Phase Protocol */}
+                <div className="space-y-6">
+                   <div className="relative pl-4 space-y-5">
+                      {/* Ultra-thin vertical line */}
+                      <div className="absolute left-[3px] top-1 bottom-1 w-[1px] bg-border/40" />
+
                       {[
-                        { label: 'Reg. Starts', date: tournament.registration_start_date, icon: Flag },
-                        { label: 'Reg. Ends', date: tournament.registration_end_date, icon: Shield },
-                        { label: 'Kick-off', date: tournament.start_date, icon: Zap, highlight: true },
-                        { label: 'Tournament Ends', date: tournament.end_date, icon: Trophy }
+                        { label: 'Registration Ends', date: tournament.registration_end_date, highlight: false },
+                        { label: 'Tournament Kick-off', date: tournament.start_date, highlight: true },
+                        { label: 'Grand Finale', date: tournament.end_date, highlight: false }
                       ].map((step, idx) => (
-                        <div key={idx} className={`flex items-center justify-between group/item ${step.highlight ? 'py-3 px-4 rounded-xl bg-accent-blue/5 border border-accent-blue/10' : ''}`}>
-                           <div className="flex items-center gap-3">
-                              <div className={`p-1.5 rounded-lg ${step.highlight ? 'bg-accent-blue/10 text-accent-blue' : 'bg-muted text-muted-foreground group-hover/item:text-accent-purple group-hover/item:bg-accent-purple/5 transition-colors'}`}>
-                                 <step.icon size={12} />
-                              </div>
-                              <span className={`text-[10px] font-black uppercase tracking-widest ${step.highlight ? 'text-accent-blue' : 'text-muted-foreground'}`}>{step.label}</span>
-                           </div>
-                           <span className={`text-[11px] font-black ${step.highlight ? 'text-accent-blue' : 'text-foreground'}`}>
-                              {step.date ? new Date(step.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'}
+                        <div key={idx} className="relative flex items-center justify-between group/step">
+                           {/* Minimal dot */}
+                           <div className={`absolute -left-[16px] w-2 h-2 rounded-full border transition-all duration-500 ${step.highlight ? 'bg-accent-blue border-accent-blue shadow-[0_0_8px_rgba(37,99,235,0.4)]' : 'bg-background border-border group-hover/step:border-accent-purple'}`} />
+                           
+                           <span className={`text-[10px] font-black uppercase tracking-[0.2em] transition-colors duration-500 ${step.highlight ? 'text-accent-blue' : 'text-muted-foreground/50 group-hover/step:text-foreground'}`}>
+                             {step.label}
                            </span>
+                           
+                           <div className="flex items-center gap-3">
+                              <div className={`h-px w-8 transition-all duration-500 ${step.highlight ? 'bg-accent-blue/20' : 'bg-border/20 group-hover/step:w-12 group-hover/step:bg-accent-purple/20'}`} />
+                              <span className={`text-[11px] font-black tracking-tight ${step.highlight ? 'text-accent-blue' : 'text-foreground/70'}`}>
+                                 {step.date ? new Date(step.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'}
+                              </span>
+                           </div>
                         </div>
                       ))}
                    </div>
