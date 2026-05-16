@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Save, CheckCircle2, AlertCircle, Gamepad2 } from 'lucide-react'
+import { User, Save, CheckCircle2, AlertCircle, Gamepad2, Camera, Loader2 } from 'lucide-react'
 import { updateProfile } from '@/actions/profile'
+import { createClient } from '@/utils/supabase/client'
+import { useRef } from 'react'
 
 interface PersonaUpdateFormProps {
   profile: any
@@ -17,11 +19,54 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [selectedGames, setSelectedGames] = useState<string[]>(profile?.games || [])
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState(profile?.avatar_url || null)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const toggleGame = (game: string) => {
     setSelectedGames(prev => 
       prev.includes(game) ? prev.filter(g => g !== game) : [...prev, game]
     )
+  }
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploading(true)
+    setMessage(null)
+
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${profile.id}/${Date.now()}.${fileExt}`
+      const filePath = `avatars/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (error) throw error
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName)
+
+      setCurrentAvatarUrl(publicUrl)
+      setMessage({ type: 'success', text: 'Image uploaded! Remember to save changes.' })
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error)
+      setMessage({ type: 'error', text: 'Upload failed: ' + error.message })
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -47,15 +92,33 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
       <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/5 blur-3xl -z-10 group-hover:bg-accent-blue/10 transition-colors" />
       
       <div className="flex items-center gap-8 mb-12">
-        <div className="relative">
-          <div className="h-24 w-24 rounded-full bg-gradient-to-tr from-accent-blue to-accent-purple flex items-center justify-center text-white shadow-2xl shadow-accent-blue/20 overflow-hidden">
-            {profile.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+        <div className="relative group/avatar cursor-pointer" onClick={handleAvatarClick}>
+          <div className="h-24 w-24 rounded-full bg-gradient-to-tr from-accent-blue to-accent-purple flex items-center justify-center text-white shadow-2xl shadow-accent-blue/20 overflow-hidden relative border-4 border-card transition-transform group-hover/avatar:scale-105">
+            {currentAvatarUrl ? (
+              <img src={currentAvatarUrl} alt="" className="w-full h-full object-cover" />
             ) : (
               <User size={40} />
             )}
+            
+            {/* Upload Overlay */}
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+              {isUploading ? (
+                <Loader2 size={24} className="animate-spin text-white" />
+              ) : (
+                <Camera size={24} className="text-white" />
+              )}
+            </div>
           </div>
           <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-emerald-500 border-4 border-card" />
+          
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            className="hidden" 
+            accept="image/*"
+            onChange={handleFileChange}
+            disabled={isUploading}
+          />
         </div>
         <div className="text-left">
           <h3 className="text-3xl font-black tracking-tight">{profile.full_name}</h3>
@@ -108,6 +171,7 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
 
         <input type="hidden" name="fullName" value={profile?.full_name} />
         <input type="hidden" name="username" value={profile?.username} />
+        <input type="hidden" name="avatarUrl" value={currentAvatarUrl || ''} />
 
         <div className="flex justify-end pt-6 border-t border-border/50">
           <button

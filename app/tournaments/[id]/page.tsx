@@ -100,7 +100,7 @@ export default async function TournamentDetailsPage({
     .from("tournament_registrations")
     .select(`
       *,
-      profiles:player_id (username, full_name),
+      profiles:player_id (username, full_name, avatar_url),
       teams:team_id (name, avatar_url)
     `)
     .eq("tournament_id", tournament.id);
@@ -253,12 +253,21 @@ export default async function TournamentDetailsPage({
                       Registration Confirmed
                     </div>
 
-                    {((tournament as any).isOwnRegistration || (tournament as any).isManager) && (
+                    {((tournament as any).isOwnRegistration || (tournament as any).isManager) && 
+                      tournament.status !== 'ongoing' && 
+                      tournament.status !== 'completed' && (
                       <CancelRegistrationForm
                         tournamentId={tournament.id}
                         teamId={(tournament as any).registeredTeamId}
                       />
                     )}
+                  </div>
+                ) : tournament.status === 'ongoing' || tournament.status === 'completed' ? (
+                  <div className="p-6 rounded-2xl bg-muted/30 border border-border text-center space-y-2">
+                    <p className="text-sm font-black text-muted-foreground uppercase tracking-widest">Registration Closed</p>
+                    <p className="text-[11px] text-muted-foreground/60 font-bold leading-relaxed">
+                      The competition has already begun. Stay tuned for future events!
+                    </p>
                   </div>
                 ) : (
                   <RegistrationForm

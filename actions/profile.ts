@@ -290,8 +290,13 @@ export async function registerForTournament(formData: FormData) {
     status: 'registered'
   }
 
-  // Check Participant Limit
-  const { data: tournament } = await supabase.from('tournaments').select('settings').eq('id', tournamentId).single()
+  // Check Participant Limit & Status
+  const { data: tournament } = await supabase.from('tournaments').select('status, settings').eq('id', tournamentId).single()
+  
+  if (tournament?.status === 'ongoing' || tournament?.status === 'completed') {
+    return { error: 'Registration is closed. The tournament has already started.' };
+  }
+
   const maxParticipants = tournament?.settings?.stage_participants_count ? parseInt(tournament.settings.stage_participants_count) : 8
 
   const { count } = await supabase
@@ -328,6 +333,17 @@ export async function cancelRegistration(formData: FormData) {
 
   const tournamentId = formData.get('tournamentId') as string
   const teamId = formData.get('teamId') as string;
+
+  // Security Check: Cannot cancel if tournament has already started
+  const { data: tournament } = await supabase
+    .from('tournaments')
+    .select('status')
+    .eq('id', tournamentId)
+    .single();
+
+  if (tournament?.status === 'ongoing' || tournament?.status === 'completed') {
+    return { error: 'Tournament has already started. Registration cannot be cancelled.' };
+  }
   
   let query = supabase
     .from('tournament_registrations')
