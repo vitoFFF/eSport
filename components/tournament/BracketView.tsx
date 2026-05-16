@@ -3,8 +3,9 @@
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, Trophy, Edit3, X, Check, Loader2, Sparkles, LayoutGrid, Calendar } from 'lucide-react'
+import { Users, Trophy, Edit3, X, Check, Loader2, Sparkles, LayoutGrid, Calendar, Image as ImageIcon, Download, ExternalLink, Upload } from 'lucide-react'
 import { updateMatchScore, generateBracketMatches, generateNextSwissRound, GameData } from '@/actions/matches'
+import { createClient } from '@/utils/supabase/client'
  
 const CARD_HEIGHT = 120
 const VERTICAL_GAP = 48
@@ -62,6 +63,9 @@ export default function BracketView({
   const [walkoverWinner, setWalkoverWinner] = useState<string | null>(null)
   const [activeGroupIdx, setActiveGroupIdx] = useState(0)
   const [activeRoundIdx, setActiveRoundIdx] = useState(0)
+  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
   const router = useRouter()
 
   // Normalize participants and matches
@@ -213,6 +217,7 @@ export default function BracketView({
     setEditGames(games)
     setIsWalkover(match.details?.is_walkover || false)
     setWalkoverWinner(match.details?.is_walkover ? (match.winner_team_id || match.winner_player_id) : null)
+    setScreenshotUrl(match.details?.screenshot_url || null)
   }
 
   const handleGenerateBracket = async () => {
@@ -248,7 +253,8 @@ export default function BracketView({
       selectedMatch.id,
       editGames,
       isWalkover,
-      winnerId || undefined
+      winnerId || undefined,
+      screenshotUrl
     )
 
     if (result.success) {
@@ -259,6 +265,39 @@ export default function BracketView({
       alert(result.error || 'Failed to update score')
     }
     setIsSubmitting(false)
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !selectedMatch) return
+
+    setIsUploading(true)
+    try {
+      const supabase = createClient()
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${selectedMatch.id}/${currentUserId}_${Date.now()}.${fileExt}`
+      const filePath = `match-screenshots/${fileName}`
+
+      const { data, error } = await supabase.storage
+        .from('match-screenshots')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) throw error
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('match-screenshots')
+        .getPublicUrl(fileName)
+
+      setScreenshotUrl(publicUrl)
+    } catch (error: any) {
+      console.error('Error uploading:', error)
+      alert('Error uploading screenshot: ' + error.message)
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const MatchConnector = ({ roundIdx, verticalReach, totalRoundsForBracket }: { roundIdx: number, verticalReach: number, totalRoundsForBracket: number }) => {
@@ -345,6 +384,18 @@ export default function BracketView({
               <div className="flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full shadow-[0_4px_12px_rgba(239,68,68,0.2)]">
                 <div className="h-1.5 w-1.5 rounded-full bg-white animate-bounce" />
                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Disputed</span>
+              </div>
+            )}
+            {match.details?.screenshot_url && (
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.open(match.details.screenshot_url, '_blank')
+                }}
+                className="flex items-center gap-2 bg-muted/80 backdrop-blur-md px-3 py-1 rounded-full border border-border/50 shadow-sm hover:bg-muted transition-colors cursor-pointer group/screenshot"
+              >
+                <ImageIcon size={12} className="text-accent-blue group-hover/screenshot:scale-110 transition-transform" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Proof</span>
               </div>
             )}
           </div>
@@ -1286,6 +1337,77 @@ export default function BracketView({
                         </div>
                       )
                     })}
+                  </div>
+                )}
+              </div>
+              
+              {/* Screenshot Verification Section */}
+              <div className="pt-4 border-t border-border/50 space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Match Screenshot</p>
+                  {isOrganizer && screenshotUrl && (
+                    <a 
+                      href={screenshotUrl} 
+                      download={`match_${selectedMatch.id}_screenshot`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-accent-blue hover:text-accent-blue/80 transition-colors"
+                    >
+                      <Download size={12} /> Download
+                    </a>
+                  )}
+                </div>
+
+                {screenshotUrl ? (
+                  <div className="relative group aspect-video rounded-2xl overflow-hidden border border-border bg-muted/30">
+                    <img src={screenshotUrl} alt="Match Result" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                      <a 
+                        href={screenshotUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all"
+                      >
+                        <ExternalLink size={18} />
+                      </a>
+                      {!isOrganizer && (
+                        <button 
+                          onClick={() => setScreenshotUrl(null)}
+                          className="p-2 rounded-xl bg-red-500/20 backdrop-blur-md text-red-500 hover:bg-red-500/30 transition-all"
+                        >
+                          <X size={18} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-border bg-muted/20 text-center space-y-3">
+                    <div className="h-10 w-10 rounded-xl bg-accent-blue/10 flex items-center justify-center">
+                      <ImageIcon size={20} className="text-accent-blue" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold">No screenshot uploaded</p>
+                      <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-widest">Provide proof of match result</p>
+                    </div>
+                    {!isOrganizer && (
+                      <>
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
+                          className="px-4 py-2 bg-accent-blue/10 text-accent-blue rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent-blue/20 transition-all flex items-center gap-2"
+                        >
+                          {isUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
+                          Upload Image
+                        </button>
+                        <input 
+                          type="file" 
+                          ref={fileInputRef} 
+                          className="hidden" 
+                          accept="image/*" 
+                          onChange={handleFileUpload} 
+                        />
+                      </>
+                    )}
                   </div>
                 )}
               </div>

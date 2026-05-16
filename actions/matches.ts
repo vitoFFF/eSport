@@ -72,7 +72,7 @@ export interface GameData {
   away_forfeit: boolean;
 }
 
-export async function updateMatchScore(matchId: string, games: GameData[], isWalkover: boolean = false, walkoverWinner?: string) {
+export async function updateMatchScore(matchId: string, games: GameData[], isWalkover: boolean = false, walkoverWinner?: string, screenshotUrl?: string | null) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -98,7 +98,7 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
     const details = match.details || {}
     const submissions = details.submissions || {}
     
-    submissions[user.id] = { games, isWalkover, walkoverWinner }
+    submissions[user.id] = { games, isWalkover, walkoverWinner, screenshot_url: screenshotUrl }
     
     const otherPlayerId = isHomePlayer 
       ? (match.away_player_id || match.away_team_id)
@@ -211,13 +211,14 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
   const finalDetails = { 
     ...(match.details || {}), 
     is_walkover: isWalkover, 
-    games: games
+    games: games,
+    screenshot_url: screenshotUrl || match.details?.screenshot_url
   }
   
   // If this was a matched player submission, ensure we keep the updated submissions list
   if (!isOrganizer) {
     const submissions = { ...(match.details?.submissions || {}) }
-    submissions[user.id] = { games, isWalkover, walkoverWinner }
+    submissions[user.id] = { games, isWalkover, walkoverWinner, screenshot_url: screenshotUrl }
     finalDetails.submissions = submissions
   }
 
