@@ -5,7 +5,9 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Trophy, User, LayoutDashboard, Home, Search, LogOut, Gamepad2, Activity, Target } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { signOut } from "@/actions/auth";
+import { useLanguage } from "@/lib/LanguageContext";
 
 type NavbarClientProps = {
   isAuthenticated: boolean;
@@ -14,6 +16,7 @@ type NavbarClientProps = {
 };
 
 const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) => {
+  const { t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -29,11 +32,11 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
   const dashboardHref = "/profile";
 
   const navLinks = [
-    { name: "Home", href: "/", icon: <Home size={18} />, color: "hover:text-blue-700 hover:bg-blue-700/20", glow: "bg-blue-700" },
-    { name: "Football", href: "/tournaments?category=football", icon: <span className="text-lg">⚽</span>, color: "hover:text-emerald-700 hover:bg-emerald-700/20", glow: "bg-emerald-700" },
-    { name: "Tennis", href: "/tournaments?category=tennis", icon: <span className="text-lg">🎾</span>, color: "hover:text-amber-700 hover:bg-amber-700/20", glow: "bg-amber-700" },
-    { name: "Padel", href: "/tournaments?category=padel", icon: <span className="text-lg">🏸</span>, color: "hover:text-orange-700 hover:bg-orange-700/20", glow: "bg-orange-700" },
-    { name: "eSport", href: "/tournaments?category=esport", icon: <span className="text-lg">🎮</span>, color: "hover:text-purple-700 hover:bg-purple-700/20", glow: "bg-purple-700" },
+    { name: t("nav.home"), href: "/", icon: <Home size={18} />, color: "hover:text-blue-700 hover:bg-blue-700/20", glow: "bg-blue-700" },
+    { name: t("nav.football"), href: "/tournaments?category=football", icon: <span className="text-lg">⚽</span>, color: "hover:text-emerald-700 hover:bg-emerald-700/20", glow: "bg-emerald-700" },
+    { name: t("nav.tennis"), href: "/tournaments?category=tennis", icon: <span className="text-lg">🎾</span>, color: "hover:text-amber-700 hover:bg-amber-700/20", glow: "bg-amber-700" },
+    { name: t("nav.padel"), href: "/tournaments?category=padel", icon: <span className="text-lg">🏸</span>, color: "hover:text-orange-700 hover:bg-orange-700/20", glow: "bg-orange-700" },
+    { name: t("nav.esport"), href: "/tournaments?category=esport", icon: <span className="text-lg">🎮</span>, color: "hover:text-purple-700 hover:bg-purple-700/20", glow: "bg-purple-700" },
   ];
 
   return (
@@ -42,23 +45,23 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
         }`}
     >
       <div
-        className="mx-auto flex w-[98%] max-w-7xl items-center justify-between rounded-full border border-border/50 bg-background/80 px-4 py-2.5 md:px-8 md:py-3 shadow-[0_8px_32px_rgba(0,0,0,0.06)] backdrop-blur-3xl transition-all duration-500 ease-in-out dark:bg-card/90 dark:border-white/10 dark:shadow-[0_8px_32px_rgba(0,0,0,0.25)]"
+        className="mx-auto flex w-[98%] max-w-[1500px] items-center justify-between rounded-full border border-border/50 bg-background/80 px-4 py-2.5 md:px-6 lg:px-8 md:py-3 shadow-[0_8px_32px_rgba(0,0,0,0.06)] backdrop-blur-3xl transition-all duration-500 ease-in-out dark:bg-card/90 dark:border-white/10 dark:shadow-[0_8px_32px_rgba(0,0,0,0.25)]"
       >
         <Link href="/" className="flex items-center space-x-2 group">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent-blue to-accent-purple shadow-[0_12px_24px_rgba(37,99,235,0.28)] transition-transform group-hover:scale-110">
             <Trophy className="text-white" size={24} />
           </div>
-          <span className="text-2xl font-black tracking-tighter text-foreground transition-colors group-hover:text-blue-700 md:text-3xl">
+          <span className="text-2xl font-black tracking-tighter text-foreground transition-colors group-hover:text-blue-700 lg:text-3xl">
             Match<span className="text-accent-blue">Point</span>
           </span>
         </Link>
 
-        <div className="hidden md:flex items-center space-x-1 lg:space-x-2">
+        <div className="hidden md:flex items-center space-x-1 lg:space-x-1.5 xl:space-x-2.5">
           {navLinks.map((link) => (
             <Link
               key={link.name}
               href={link.href}
-              className={`group relative flex items-center rounded-full px-3 lg:px-4 py-2 text-[15px] font-bold text-foreground outline-none transition-all duration-300 ${link.color}`}
+              className={`group relative flex items-center rounded-full px-3 lg:px-4 py-2 text-sm lg:text-[15px] font-bold text-foreground outline-none transition-all duration-300 ${link.color}`}
             >
               {/* Hover Background Layer */}
               <div className={`absolute inset-0 scale-75 rounded-full opacity-0 transition-all duration-300 ease-out group-hover:scale-100 group-hover:opacity-100 dark:bg-white/5`} />
@@ -77,19 +80,17 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
           {isAuthenticated && (
             <Link
               href={dashboardHref}
-              className="relative flex items-center space-x-2 rounded-full px-4 py-2 text-sm font-bold text-accent-blue bg-accent-blue/5 border border-accent-blue/10 hover:bg-accent-blue/15 hover:text-blue-700 transition-all glow-blue group"
+              className="relative flex items-center space-x-2 lg:space-x-3 rounded-full px-3 lg:px-5 py-2 text-sm font-bold text-accent-blue bg-accent-blue/5 border border-accent-blue/10 hover:bg-accent-blue/15 hover:text-blue-700 transition-all glow-blue group whitespace-nowrap"
             >
               <LayoutDashboard size={16} className="group-hover:scale-110 transition-transform" />
-              <span>Dashboard</span>
+              <span>{t("nav.dashboard")}</span>
             </Link>
           )}
         </div>
 
         <div className="hidden md:flex items-center space-x-4">
+          <LanguageSwitcher />
           <ThemeToggle />
-          <button className="p-2 text-muted-foreground transition-colors hover:text-foreground">
-            <Search size={20} />
-          </button>
 
           {isAuthenticated ? (
             <div className="relative">
@@ -114,7 +115,7 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
                       className="absolute right-0 mt-3 w-64 origin-top-right rounded-[2rem] border border-border bg-card/95 p-2 shadow-2xl backdrop-blur-xl z-50"
                     >
                       <div className="p-4 border-b border-border/50">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Signed in as</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{t("dashboard.signedInAs")}</p>
                         <p className="text-sm font-bold text-foreground truncate">{username || "User"}</p>
                       </div>
 
@@ -134,7 +135,7 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
                             className="flex items-center gap-3 w-full px-4 py-3 rounded-xl text-sm font-bold text-red-500 hover:bg-red-500/10 transition-all group/item"
                           >
                             <LogOut size={18} className="group-hover/item:translate-x-1 transition-transform" />
-                            Sign Out
+                            {t("nav.signOut")}
                           </button>
                         </form>
                       </div>
@@ -146,9 +147,9 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
           ) : (
             <Link
               href="/auth"
-              className="rounded-full bg-gradient-to-r from-accent-blue to-accent-purple px-6 py-2 text-white font-semibold shadow-[0_12px_30px_rgba(37,99,235,0.3)] transition-all hover:brightness-110 active:scale-95"
+              className="rounded-full bg-gradient-to-r from-accent-blue to-accent-purple px-4 lg:px-6 py-2 text-white font-semibold shadow-[0_12px_30px_rgba(37,99,235,0.3)] transition-all hover:brightness-110 active:scale-95 text-xs lg:text-sm"
             >
-              Sign In
+              {t("nav.signIn")}
             </Link>
           )}
         </div>
@@ -195,12 +196,16 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
               )}
               <div className="flex flex-col space-y-4 border-t border-border pt-4">
                 <div className="flex items-center justify-between">
+                  <span className="font-medium text-muted-foreground">Language</span>
+                  <LanguageSwitcher />
+                </div>
+                <div className="flex items-center justify-between">
                   <span className="font-medium text-muted-foreground">Switch Theme</span>
                   <ThemeToggle />
                 </div>
                 <button className="flex items-center space-x-3 text-muted-foreground hover:text-foreground transition-colors">
                   <Search size={20} />
-                  <span>Search</span>
+                  <span>{t("common.search")}</span>
                 </button>
 
                 {isAuthenticated ? (

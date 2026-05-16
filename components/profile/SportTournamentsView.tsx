@@ -4,6 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Trophy, Users, Calendar, MapPin, ArrowRight, Sparkles, Flame, Clock, Zap } from 'lucide-react'
+import { useLanguage } from '@/lib/LanguageContext'
 
 interface SportTournamentsViewProps {
   tournaments: any[]
@@ -43,6 +44,7 @@ const SPORT_META: Record<string, { name: string, emoji: string, tagline: string,
 }
 
 export default function SportTournamentsView({ tournaments, activeSport, teams = [] }: SportTournamentsViewProps) {
+  const { t } = useLanguage()
   const meta = SPORT_META[activeSport] || SPORT_META.esport
   const filtered = tournaments.filter(t => t.category === activeSport)
 
@@ -66,29 +68,29 @@ export default function SportTournamentsView({ tournaments, activeSport, teams =
             <span className="text-4xl">{meta.emoji}</span>
             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-sm text-[10px] font-black uppercase tracking-widest">
               <Sparkles size={12} />
-              Live Season
+              {t("dashboard.sports.liveSeason")}
             </div>
           </div>
           
           <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-3">
-            Active Tournaments
+            {t("dashboard.sports.activeTournaments")}
           </h1>
           <p className="text-white/80 text-lg font-medium max-w-xl leading-relaxed">
-            Browse and register for the upcoming prestige events.
+            {t("dashboard.sports.browseDescription")}
           </p>
           <p className="text-white/50 text-sm font-bold mt-1 italic">
-            {meta.tagline}
+            {t(`dashboard.sports.${activeSport}.tagline`)}
           </p>
 
           <div className="flex items-center gap-6 mt-8">
             <div className="flex items-center gap-2 text-sm font-bold text-white/70">
               <Trophy size={16} />
-              <span>{filtered.length} Event{filtered.length !== 1 ? 's' : ''}</span>
+              <span>{filtered.length} {filtered.length !== 1 ? t("dashboard.sports.events") : t("dashboard.sports.event")}</span>
             </div>
             <div className="h-4 w-px bg-white/20" />
             <div className="flex items-center gap-2 text-sm font-bold text-white/70">
               <Flame size={16} />
-              <span>Season 1 — 2026</span>
+              <span>{t("dashboard.sports.season")} 1 — 2026</span>
             </div>
           </div>
         </div>
@@ -166,11 +168,11 @@ export default function SportTournamentsView({ tournaments, activeSport, teams =
                     {/* Prize + Action */}
                     <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
                       <div>
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Prize Pool</p>
+                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">{t("cards.prizePool")}</p>
                         <p className="text-sm font-black">{tournament.prize_pool || 'TBD'}</p>
                       </div>
                       <div className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest ${meta.accent} bg-[var(--sport-accent)]/10 group-hover:bg-[var(--sport-accent)]/20 transition-colors`}>
-                        View
+                        {t("dashboard.sports.view")}
                         <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
@@ -190,12 +192,14 @@ export default function SportTournamentsView({ tournaments, activeSport, teams =
           <div className={`h-20 w-20 rounded-full bg-gradient-to-br ${meta.gradient} flex items-center justify-center mx-auto mb-6 opacity-30`}>
             <Trophy className="text-white" size={36} />
           </div>
-          <h3 className="text-2xl font-black mb-3">No {meta.name} Events Yet</h3>
+          <h3 className="text-2xl font-black mb-3">
+            {t("dashboard.sports.noEvents").replace("{sport}", t(`nav.${activeSport}`))}
+          </h3>
           <p className="text-muted-foreground font-medium max-w-md mx-auto leading-relaxed mb-8">
-            There are no active {meta.name.toLowerCase()} tournaments at the moment. Check back soon or explore other categories.
+            {t("dashboard.sports.noEventsDesc").replace("{sport}", t(`nav.${activeSport}`).toLowerCase())}
           </p>
           <Link href={`/tournaments?category=${activeSport}`} className={`inline-flex items-center gap-2 px-8 py-3 rounded-full bg-gradient-to-r ${meta.gradient} text-white font-black text-xs uppercase tracking-widest hover:scale-105 transition-transform shadow-lg`}>
-            Browse All {meta.name}
+            {t("dashboard.sports.browseAll").replace("{sport}", t(`nav.${activeSport}`))}
             <ArrowRight size={16} />
           </Link>
         </motion.div>

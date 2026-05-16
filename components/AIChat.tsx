@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Send, X, Bot, Sparkles, User, Minus } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 type Message = {
   id: string;
@@ -12,13 +13,14 @@ type Message = {
 };
 
 const AIChat = () => {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       role: "ai",
-      content: "Hello! I'm your MatchPoint AI assistant. How can I help you dominate the arena today?",
+      content: t("aichat.greeting"),
       timestamp: new Date(),
     },
   ]);
@@ -53,7 +55,7 @@ const AIChat = () => {
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: "ai",
-        content: "I'm currently in 'UI-only' mode, but I'll be fully operational soon! Stay tuned for my advanced tournament insights.",
+        content: t("aichat.mode"),
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiResponse]);
@@ -84,7 +86,7 @@ const AIChat = () => {
                     MatchPoint <span className="text-accent-blue">AI</span>
                   </h3>
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center">
-                    <Sparkles size={10} className="mr-1 text-accent-purple" /> Online & Ready
+                    <Sparkles size={10} className="mr-1 text-accent-purple" /> {t("aichat.status")}
                   </p>
                 </div>
               </div>
@@ -135,7 +137,7 @@ const AIChat = () => {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about tournaments, cards, or stats..."
+                  placeholder={t("aichat.placeholder")}
                   className="w-full bg-background/50 border border-white/10 rounded-2xl py-4 pl-6 pr-14 text-sm focus:outline-none focus:ring-2 focus:ring-accent-blue/50 focus:border-accent-blue/50 transition-all placeholder:text-muted-foreground/50"
                 />
                 <button
@@ -147,7 +149,7 @@ const AIChat = () => {
                 </button>
               </div>
               <p className="mt-3 text-[9px] text-center font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">
-                Powered by MatchPoint Intelligence
+                {t("aichat.power")}
               </p>
             </form>
           </motion.div>

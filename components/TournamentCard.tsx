@@ -4,6 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Users, Calendar, Trophy, ArrowRight } from "lucide-react";
 import Link from 'next/link';
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface TournamentCardProps {
   game: string;
@@ -18,6 +19,7 @@ interface TournamentCardProps {
 }
 
 const TournamentCard = ({ game, title, prizePool, participants, date, status, image, icon, link }: TournamentCardProps) => {
+  const { t } = useLanguage();
   const [imageError, setImageError] = React.useState(false);
 
   return (
@@ -58,7 +60,11 @@ const TournamentCard = ({ game, title, prizePool, participants, date, status, im
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
               </span>}
-              <span>{status}</span>
+              <span>
+                {status === "Live" ? t("common.live") : 
+                 status === "Upcoming" ? t("common.upcoming") : 
+                 status === "Finished" ? t("common.finished") : status}
+              </span>
             </div>
           </div>
 
@@ -79,14 +85,14 @@ const TournamentCard = ({ game, title, prizePool, participants, date, status, im
 
           <div className="grid grid-cols-2 gap-4 py-5 border-y border-foreground/5">
             <div className="space-y-1.5">
-              <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-black opacity-60">Prize Pool</p>
+              <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-black opacity-60">{t("cards.prizePool")}</p>
               <p className="text-foreground font-black flex items-center space-x-2 text-base">
                 <Trophy size={16} className="text-accent-purple" />
                 <span className="tracking-tight">{prizePool}</span>
               </p>
             </div>
             <div className="space-y-1.5 pl-4 border-l border-foreground/5">
-              <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-black opacity-60">Teams</p>
+              <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-black opacity-60">{t("cards.teams")}</p>
               <p className="text-foreground font-black flex items-center space-x-2 text-base">
                 <Users size={16} className="text-accent-blue" />
                 <span className="tracking-tight">{participants}</span>
@@ -101,7 +107,7 @@ const TournamentCard = ({ game, title, prizePool, participants, date, status, im
             </div>
             
             <div className="flex items-center space-x-2 bg-foreground text-background px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest group-hover:bg-accent-blue group-hover:text-white transition-all shadow-lg hover:shadow-accent-blue/20 transform group-hover:-translate-y-1 active:scale-95">
-              <span>Join</span>
+              <span>{t("cards.join")}</span>
               <ArrowRight size={14} />
             </div>
           </div>

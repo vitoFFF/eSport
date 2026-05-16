@@ -3,6 +3,7 @@
 import React, { useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { Star, Shield, Trophy } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 interface PlayerCardProps {
   name: string;
@@ -15,6 +16,7 @@ interface PlayerCardProps {
 }
 
 const PlayerCard = ({ name, rating, position, team, stats, image, tier }: PlayerCardProps) => {
+  const { t } = useLanguage();
   const cardRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -129,7 +131,11 @@ const PlayerCard = ({ name, rating, position, team, stats, image, tier }: Player
             <div className="grid grid-cols-3 gap-2 border-t border-border/20 pt-3">
               {stats.map((stat, i) => (
                 <div key={i} className="text-center">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase leading-none mb-1">{stat.label}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase leading-none mb-1">
+                    {stat.label === "Aim" ? t("cards.stats.aim") : 
+                     stat.label === "IQ" ? t("cards.stats.iq") : 
+                     stat.label === "Clutch" ? t("cards.stats.clutch") : stat.label}
+                  </p>
                   <p className={`text-sm font-black italic tracking-tighter bg-clip-text text-transparent bg-gradient-to-b ${tierColors[tier]}`}>
                     {stat.value}
                   </p>

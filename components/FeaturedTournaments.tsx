@@ -3,6 +3,7 @@
 import React, { useRef } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Gamepad2, Swords, ShieldCheck, Target } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 import TournamentCard from "./TournamentCard";
 
 const mockTournaments = [
@@ -63,6 +64,7 @@ interface FeaturedTournamentsProps {
 }
 
 const FeaturedTournaments = ({ dbTournaments = [] }: FeaturedTournamentsProps) => {
+  const { t } = useLanguage();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: "left" | "right") => {
@@ -98,10 +100,10 @@ const FeaturedTournaments = ({ dbTournaments = [] }: FeaturedTournamentsProps) =
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 space-y-8 md:space-y-0">
           <div className="space-y-6">
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-foreground leading-tight uppercase italic">
-              COMPETE IN THE <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue via-accent-blue-glow to-accent-purple drop-shadow-sm">ARENA</span>.
+              {t("home.arena.title")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue via-accent-blue-glow to-accent-purple drop-shadow-sm">{t("home.arena.titleAccent")}</span>.
             </h2>
             <p className="text-slate-500 font-medium max-w-xl text-lg opacity-80 border-l-2 border-accent-blue/20 pl-6">
-              Step into the spotlight and prove your worth. Join the world's most prestigious tournaments.
+              {t("home.arena.description")}
             </p>
           </div>
 
@@ -137,7 +139,7 @@ const FeaturedTournaments = ({ dbTournaments = [] }: FeaturedTournamentsProps) =
         <div className="md:hidden mt-8 flex justify-center">
           <div className="px-6 py-2 rounded-full glass border border-foreground/5 flex items-center space-x-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
             <span className="w-1 h-1 rounded-full bg-slate-400 animate-pulse" />
-            <span>Swipe to navigate</span>
+            <span>{t("home.arena.swipe")}</span>
             <span className="w-1 h-1 rounded-full bg-slate-400 animate-pulse" />
           </div>
         </div>

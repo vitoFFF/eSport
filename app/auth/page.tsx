@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { signUp, signIn } from '@/actions/auth'
 import { Shield, User, LayoutDashboard, Mail, Lock, UserCircle, Loader2, Trophy, Users as UsersIcon } from 'lucide-react'
+import { useLanguage } from '@/lib/LanguageContext'
 
 export default function AuthPage() {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login')
   const [role, setRole] = useState<'player' | 'organizer' | 'manager'>('player')
   const [loading, setLoading] = useState(false)
@@ -57,10 +59,10 @@ export default function AuthPage() {
               <Trophy className="h-8 w-8 text-white" />
             </motion.div>
             <h1 className="text-3xl font-black tracking-tight text-foreground">
-              {activeTab === 'login' ? 'Sign in to Matchpoint' : 'Create your account'}
+              {activeTab === 'login' ? t("auth.signIn") : t("auth.signUp")}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              {activeTab === 'login' ? 'Your account opens on your profile page after login.' : 'Register and then sign in with your new account.'}
+              {activeTab === 'login' ? t("auth.signInDesc") : t("auth.signUpDesc")}
             </p>
           </div>
 
@@ -75,7 +77,7 @@ export default function AuthPage() {
                   : 'text-muted-foreground hover:bg-card/70 hover:text-foreground'
                 }`}
             >
-              Sign In
+              {t("auth.tabSignIn")}
             </button>
             <button
               onClick={() => {
@@ -87,7 +89,7 @@ export default function AuthPage() {
                   : 'text-muted-foreground hover:bg-card/70 hover:text-foreground'
                 }`}
             >
-              Sign Up
+              {t("auth.tabSignUp")}
             </button>
           </div>
 
@@ -109,14 +111,14 @@ export default function AuthPage() {
 
               {success && (
                 <div className="rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
-                  Registration successful. Please sign in.
+                  {t("auth.regSuccess")}
                 </div>
               )}
 
               {activeTab === 'register' && (
                 <>
                   <div className="space-y-2">
-                    <label className="ml-1 text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-foreground/60">Account Type</label>
+                    <label className="ml-1 text-xs font-bold uppercase tracking-widest text-slate-600 dark:text-foreground/60">{t("auth.accountType")}</label>
                     <div className="grid grid-cols-3 gap-3">
                       <button
                         type="button"
@@ -127,7 +129,7 @@ export default function AuthPage() {
                           }`}
                       >
                         <User className="h-5 w-5" />
-                        <span className="text-[10px] font-bold uppercase tracking-tight">Player</span>
+                        <span className="text-[10px] font-bold uppercase tracking-tight">{t("auth.player")}</span>
                       </button>
                       <button
                         type="button"
@@ -138,7 +140,7 @@ export default function AuthPage() {
                           }`}
                       >
                         <UsersIcon className="h-5 w-5" />
-                        <span className="text-[10px] font-bold uppercase tracking-tight">Manager</span>
+                        <span className="text-[10px] font-bold uppercase tracking-tight">{t("auth.manager")}</span>
                       </button>
                       <button
                         type="button"
@@ -149,13 +151,13 @@ export default function AuthPage() {
                           }`}
                       >
                         <Shield className="h-5 w-5" />
-                        <span className="text-[10px] font-bold uppercase tracking-tight">Organizer</span>
+                        <span className="text-[10px] font-bold uppercase tracking-tight">{t("auth.organizer")}</span>
                       </button>
                     </div>
                   </div>
 
                   <InputField
-                    label={role === 'player' ? 'Full Name' : role === 'manager' ? 'Team Name' : 'Company Name'}
+                    label={role === 'player' ? t("auth.fullName") : role === 'manager' ? t("auth.teamName") : t("auth.companyName")}
                     name="fullName"
                     type="text"
                     placeholder={role === 'player' ? "John Doe" : role === 'manager' ? "Team Name" : "Company Name"}
@@ -163,7 +165,7 @@ export default function AuthPage() {
                   />
 
                   <InputField
-                    label="Username"
+                    label={t("auth.username")}
                     name="username"
                     type="text"
                     placeholder="oranization"
@@ -173,7 +175,7 @@ export default function AuthPage() {
               )}
 
               <InputField
-                label="Email Address"
+                label={t("auth.email")}
                 name="email"
                 type="email"
                 placeholder="you@example.com"
@@ -181,7 +183,7 @@ export default function AuthPage() {
               />
 
               <InputField
-                label="Password"
+                label={t("auth.password")}
                 name="password"
                 type="password"
                 placeholder="••••••••"
@@ -195,12 +197,12 @@ export default function AuthPage() {
                 {loading ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    Processing...
+                    {t("auth.processing")}
                   </>
                 ) : activeTab === 'login' ? (
-                  'Sign In'
+                  t("auth.tabSignIn")
                 ) : (
-                  'Create Account'
+                  t("auth.createAccount")
                 )}
               </button>
             </motion.form>

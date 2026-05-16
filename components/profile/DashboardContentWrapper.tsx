@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ProfileSidebar from './ProfileSidebar'
 import SportTournamentsView from './SportTournamentsView'
+import { useLanguage } from '@/lib/LanguageContext'
 
 interface DashboardShellProps {
   children: React.ReactNode
@@ -39,13 +40,14 @@ const TAB_TITLES: Record<string, string> = {
 export { SPORT_TITLES }
 
 export default function DashboardShell({ children, profile, headerRight, tournaments = [], teams = [], currentTab = 'overview' }: DashboardShellProps) {
+  const { t } = useLanguage()
   const [activeSport, setActiveSport] = useState('overview')
   const blobColors = SPORT_BLOB_COLORS[activeSport] || SPORT_BLOB_COLORS.overview
   const isSportView = activeSport !== 'overview'
 
   // Dynamic title — reacts to both sport filter and current tab
-  const displayTitle = isSportView ? SPORT_TITLES[activeSport] : (TAB_TITLES[currentTab] || 'Dashboard')
-  const breadcrumb = isSportView ? activeSport : currentTab
+  const displayTitle = isSportView ? t(`nav.${activeSport}`) : (t(`dashboard.${currentTab}`) || 'Dashboard')
+  const breadcrumb = isSportView ? t(`nav.${activeSport}`) : t(`dashboard.${currentTab}`)
 
   return (
     <div className="fixed inset-0 bg-background flex z-[100] overflow-hidden" data-sport={activeSport}>

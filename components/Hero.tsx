@@ -3,8 +3,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Trophy, CreditCard, ChevronRight, Play, Gamepad2, Users, Star, ArrowUpRight } from "lucide-react";
+import { useLanguage } from "@/lib/LanguageContext";
 
 const Hero = () => {
+  const { t } = useLanguage();
   return (
     <section className="relative w-full min-h-[500px] md:min-h-[650px] lg:min-h-[750px] flex flex-col justify-center pt-24 pb-16 md:pt-32 md:pb-20 overflow-hidden">
       <div className="absolute inset-0 z-0 bg-background" />
@@ -22,16 +24,16 @@ const Hero = () => {
           >
             <div className="inline-flex items-center space-x-3 px-4 py-1.5 rounded-full glass border border-white/5 shadow-lg backdrop-blur-md">
               <span className="flex h-1.5 w-1.5 rounded-full bg-accent-blue animate-pulse" />
-              <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-foreground/70">PRO LEAGUE PLATFORM</span>
+              <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-foreground/70">{t("hero.badge")}</span>
             </div>
 
             <div className="space-y-2 md:space-y-3">
               <h1 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold tracking-tight leading-[1.1] text-foreground">
-                The New Standard <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue via-accent-purple to-pink-500">of Performance</span>.
+                {t("hero.title")} <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-blue via-accent-purple to-pink-500">{t("hero.titleAccent")}</span>.
               </h1>
               <p className="text-base md:text-lg lg:text-xl font-medium text-slate-400 max-w-lg leading-relaxed">
-                Elevate your competitive edge on the most advanced platform for professional athletes and elite gamers.
+                {t("hero.description")}
               </p>
             </div>
 
@@ -40,7 +42,7 @@ const Hero = () => {
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-blue to-accent-purple opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <div className="relative z-10 flex items-center justify-center space-x-2 group-hover:text-white transition-colors">
                   <Trophy size={16} />
-                  <span>Explore Tournaments</span>
+                  <span>{t("hero.explore")}</span>
                   <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
@@ -48,7 +50,7 @@ const Hero = () => {
               <button className="group px-7 py-3.5 rounded-xl luxury-glass border border-white/10 text-foreground font-bold uppercase tracking-wider text-[11px] transition-all hover:bg-white/5 hover:scale-[1.02] active:scale-95 shadow-md flex items-center justify-center">
                 <div className="flex items-center space-x-2">
                   <CreditCard size={16} className="text-accent-purple" />
-                  <span>Join as Pro</span>
+                  <span>{t("hero.joinPro")}</span>
                 </div>
               </button>
             </div>
@@ -66,7 +68,7 @@ const Hero = () => {
                   {[1, 2, 3, 4, 5].map((s) => <Star key={s} size={10} fill="currentColor" />)}
                 </div>
                 <p className="text-[10px] md:text-[11px] text-muted-foreground uppercase tracking-widest font-bold">
-                  Trusted by <span className="text-foreground">20k+</span> Pros
+                  {t("hero.trustedBy")} <span className="text-foreground">20k+</span> {t("hero.pros")}
                 </p>
               </div>
             </div>
@@ -103,17 +105,17 @@ const Hero = () => {
                     <Gamepad2 className="text-white relative z-10" size={28} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-foreground tracking-tight leading-tight">FEATURED EVENT</h3>
+                    <h3 className="text-xl font-black text-foreground tracking-tight leading-tight">{t("hero.featuredEvent")}</h3>
                     <div className="flex items-center space-x-2">
-                      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-accent-blue">Global Qualifiers</p>
+                      <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-accent-blue">{t("hero.globalQualifiers")}</p>
                       <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Season 4</p>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{t("hero.season")} 4</p>
                     </div>
                   </div>
                 </div>
                 <div className="px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-[0.15em] flex items-center space-x-2 shadow-sm">
                   <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                  <span>Live Now</span>
+                  <span>{t("common.liveNow")}</span>
                 </div>
               </div>
 
@@ -138,15 +140,15 @@ const Hero = () => {
                   </div>
                   <div className="flex items-center space-x-1.5 text-white/80">
                     <Users size={14} />
-                    <span className="text-[10px] font-bold">12.4k Watching</span>
+                    <span className="text-[10px] font-bold">12.4k {t("hero.watching")}</span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-5 relative z-10">
                 {[
-                  { label: "Total Prize Pool", value: "$25,000", color: "text-amber-400", sub: "USD" },
-                  { label: "Slots Filled", value: "112 / 128", color: "text-accent-blue", sub: "Teams" },
+                  { label: t("hero.prizePool"), value: "$25,000", color: "text-amber-400", sub: "USD" },
+                  { label: t("hero.slotsFilled"), value: "112 / 128", color: "text-accent-blue", sub: "Teams" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-white/5 rounded-2xl p-5 border border-white/5 hover:bg-white/10 transition-colors group/stat">
                     <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-[0.1em] mb-2">{stat.label}</p>
@@ -160,7 +162,7 @@ const Hero = () => {
 
               <button className="w-full mt-8 py-4 rounded-2xl bg-foreground text-background font-black uppercase tracking-[0.2em] text-[11px] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center space-x-3 group/btn shadow-xl relative overflow-hidden shimmer-glint">
                 <div className="absolute inset-0 bg-gradient-to-r from-accent-blue to-accent-purple opacity-0 group-hover:opacity-10 transition-opacity" />
-                <span className="relative z-10">Join Tournament</span>
+                <span className="relative z-10">{t("hero.joinTournament")}</span>
                 <ArrowUpRight size={18} className="relative z-10 group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
               </button>
             </motion.div>

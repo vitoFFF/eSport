@@ -1,0 +1,180 @@
+{
+  "nav": {
+    "home": "Home",
+    "football": "Football",
+    "tennis": "Tennis",
+    "padel": "Padel",
+    "esport": "eSport",
+    "dashboard": "Dashboard",
+    "signIn": "Sign In",
+    "signOut": "Sign Out"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "overview": "Overview",
+    "arena": "Arena",
+    "personal": "Personal",
+    "settings": "Settings",
+    "signedInAs": "Signed in as",
+    "matches": "Matches",
+    "wins": "Wins",
+    "mvp": "MVP",
+    "tournamentArena": "Tournament Arena",
+    "arenaDescription": "Discover upcoming events and register your teams to compete for glory.",
+    "sports": {
+      "liveSeason": "Live Season",
+      "activeTournaments": "Active Tournaments",
+      "browseDescription": "Browse and register for the upcoming prestige events.",
+      "event": "Event",
+      "events": "Events",
+      "season": "Season",
+      "noEvents": "No {sport} Events Yet",
+      "noEventsDesc": "There are no active {sport} tournaments at the moment. Check back soon or explore other categories.",
+      "browseAll": "Browse All {sport}",
+      "view": "View",
+      "football": {
+        "tagline": "Dominate the pitch. Claim the trophy."
+      },
+      "tennis": {
+        "tagline": "Every serve counts. Every rally matters."
+      },
+      "padel": {
+        "tagline": "Fast courts. Fierce competition."
+      },
+      "esport": {
+        "tagline": "Log in. Level up. Dominate."
+      }
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save Changes",
+    "cancel": "Cancel",
+    "search": "Search",
+    "join": "Join",
+    "design": "Design",
+    "viewAll": "View All",
+    "verified": "Verified",
+    "new": "New",
+    "liveNow": "Live Now",
+    "upcoming": "Upcoming",
+    "finished": "Finished",
+    "live": "Live"
+  },
+  "hero": {
+    "badge": "PRO LEAGUE PLATFORM",
+    "title": "The New Standard",
+    "titleAccent": "of Performance",
+    "description": "Elevate your competitive edge on the most advanced platform for professional athletes and elite gamers.",
+    "explore": "Explore Tournaments",
+    "joinPro": "Join as Pro",
+    "trustedBy": "Trusted by",
+    "pros": "Pros",
+    "featuredEvent": "FEATURED EVENT",
+    "globalQualifiers": "Global Qualifiers",
+    "season": "Season",
+    "watching": "Watching",
+    "prizePool": "Total Prize Pool",
+    "slotsFilled": "Slots Filled",
+    "joinTournament": "Join Tournament"
+  },
+  "home": {
+    "legacyTitle": "CREATE YOUR",
+    "legacyAccent": "LEGACY CARD",
+    "legacyDescription": "Your career is more than just raw stats. Showcase your achievements with a viral, 3D collectible card that represents your legacy.",
+    "designCard": "Design Your Card",
+    "tiers": "Tiers",
+    "gold": "Gold",
+    "silver": "Silver",
+    "bronze": "Bronze",
+    "readyToDominate": "READY TO DOMINATE?",
+    "dominateDescription": "Join thousands of players already competing in the arena. Your journey to pro starts here.",
+    "joinNow": "JOIN MATCHPOINT NOW",
+    "arena": {
+      "title": "COMPETE IN THE",
+      "titleAccent": "ARENA",
+      "description": "Step into the spotlight and prove your worth. Join the world's most prestigious tournaments.",
+      "swipe": "Swipe to navigate"
+    }
+  },
+  "features": {
+    "badge": "Built for the",
+    "badgeAccent": "Elite",
+    "description": "Discover a suite of tools designed to take your competitive career to the next level. From viral networking to deep data analysis.",
+    "analytics": {
+      "title": "Detailed Analytics",
+      "description": "Track every stat, from headshot percentage to win rates across multiple games with pro-level accuracy."
+    },
+    "cards": {
+      "title": "Viral Player Cards",
+      "description": "Create and share customizable 3D player cards that showcase your career highlights and global rating."
+    },
+    "scouting": {
+      "title": "Pro Scouting",
+      "description": "Get noticed by top-tier organizations and scouts through our advanced talent discovery leaderboard."
+    },
+    "hosting": {
+      "title": "Tournament Hosting",
+      "description": "Launch your own competitive leagues with automated bracket management and built-in prize distribution."
+    },
+    "updates": {
+      "title": "Real-time Updates",
+      "description": "Experience lag-free score tracking and live match data for physical and electronic sports tournaments."
+    },
+    "leaderboards": {
+      "title": "Global Leaderboards",
+      "description": "Climb the ranks and compete with players worldwide for the top spot in the matchpoint ecosystem."
+    }
+  },
+  "footer": {
+    "description": "The premier platform for eSports and physical sports tournaments. Elevate your competitive career with pro-level analytics and networking.",
+    "platform": "Platform",
+    "company": "Company",
+    "aboutUs": "About Us",
+    "partners": "Partners",
+    "contact": "Contact",
+    "sponsorships": "Sponsorships",
+    "stayUpdated": "Stay Updated",
+    "newsletter": "Join our newsletter for tournament updates.",
+    "rights": "All rights reserved. Built for the next generation of athletes.",
+    "aichat": {
+      "greeting": "Hello! I'm your MatchPoint AI assistant. How can I help you dominate the arena today?",
+      "placeholder": "Ask about tournaments, cards, or stats...",
+      "status": "Online & Ready",
+      "power": "Powered by MatchPoint Intelligence",
+      "mode": "I'm currently in 'UI-only' mode, but I'll be fully operational soon! Stay tuned for my advanced tournament insights."
+    },
+    "cards": {
+      "prizePool": "Prize Pool",
+      "teams": "Teams",
+      "join": "Join",
+      "stats": {
+        "aim": "Aim",
+        "iq": "IQ",
+        "clutch": "Clutch"
+      }
+    },
+    "auth": {
+      "signIn": "Sign in to Matchpoint",
+      "signUp": "Create your account",
+      "signInDesc": "Your account opens on your profile page after login.",
+      "signUpDesc": "Register and then sign in with your new account.",
+      "tabSignIn": "Sign In",
+      "tabSignUp": "Sign Up",
+      "accountType": "Account Type",
+      "player": "Player",
+      "manager": "Manager",
+      "organizer": "Organizer",
+      "fullName": "Full Name",
+      "teamName": "Team Name",
+      "companyName": "Company Name",
+      "username": "Username",
+      "email": "Email Address",
+      "password": "Password",
+      "processing": "Processing...",
+      "createAccount": "Create Account",
+      "regSuccess": "Registration successful. Please sign in."
+    }
+  }
+}

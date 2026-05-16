@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { updateProfile, respondToInvite, leaveTeam } from '@/actions/profile'
 import { User, Gamepad2, Save, CheckCircle2, AlertCircle, Trophy, Users, Star, Swords, Calendar, ChevronRight, Target, Zap, Rocket, BadgeCheck, LayoutDashboard, Lock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLanguage } from '@/lib/LanguageContext'
 
 interface PlayerProfileProps {
   profile: any
@@ -68,6 +69,7 @@ const LEADERBOARD_PLAYERS = [
 ]
 
 export default function PlayerProfile({ profile, playerTeams = [], teamInvites = [], stats }: PlayerProfileProps) {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<'achievements' | 'activity' | 'rosters'>('achievements')
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -76,9 +78,9 @@ export default function PlayerProfile({ profile, playerTeams = [], teamInvites =
     : 0;
 
   const tabItems = [
-    { id: 'achievements', label: 'Achievements', icon: <Star size={14} /> },
-    { id: 'activity', label: 'Activity', icon: <Rocket size={14} /> },
-    { id: 'rosters', label: 'Rosters', icon: <Users size={14} /> },
+    { id: 'achievements', label: t("dashboard.overview"), icon: <Star size={14} /> },
+    { id: 'activity', label: t("dashboard.arena"), icon: <Rocket size={14} /> },
+    { id: 'rosters', label: t("dashboard.personal"), icon: <Users size={14} /> },
   ]
 
   return (
@@ -93,9 +95,9 @@ export default function PlayerProfile({ profile, playerTeams = [], teamInvites =
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard label="Win Rate" value={`${winRate}%`} sub="Career Average" icon={<Trophy size={20} className="text-amber-400" />} />
-        <StatCard label="Matches Played" value={stats?.matchesPlayed?.toString() || "0"} sub="Career Total" icon={<Gamepad2 size={20} className="text-accent-blue" />} />
+        <StatCard label={t("dashboard.matches")} value={stats?.matchesPlayed?.toString() || "0"} sub="Career Total" icon={<Gamepad2 size={20} className="text-accent-blue" />} />
         <StatCard label="Active Teams" value={playerTeams.length.toString()} sub="Competing In" icon={<Users size={20} className="text-accent-purple" />} />
-        <StatCard label="MVP Awards" value={stats?.mvpAwards?.toString() || "0"} sub="Achievements" icon={<Star size={20} className="text-pink-500" />} trend={stats?.mvpAwards && stats.mvpAwards > 0 ? "Verified" : undefined} />
+        <StatCard label={t("dashboard.mvp")} value={stats?.mvpAwards?.toString() || "0"} sub="Achievements" icon={<Star size={20} className="text-pink-500" />} trend={stats?.mvpAwards && stats.mvpAwards > 0 ? "Verified" : undefined} />
       </div>
 
       {/* Top Row: Analytics & History (Side by Side) */}

@@ -10,6 +10,7 @@ import { signOut } from "@/actions/auth";
 
 import PersonaUpdateForm from "@/components/profile/PersonaUpdateForm";
 import SettingsView from "@/components/profile/SettingsView";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 export default async function ProfilePage({ searchParams }: { searchParams: { tab?: string } }) {
   const { tab = 'overview' } = await searchParams;
@@ -147,6 +148,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: { ta
 
   const headerRight = (
     <div className="flex items-center gap-6">
+       <LanguageSwitcher />
        <div className="hidden md:flex flex-col items-end">
          <p className="text-sm font-black tracking-tight">{profile.full_name}</p>
          <p className="text-[10px] font-bold text-[var(--sport-accent,var(--accent-blue))] uppercase tracking-widest transition-colors duration-500">{profile.role}</p>
