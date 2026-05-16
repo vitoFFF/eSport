@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, Trophy, Edit3, X, Check, Loader2, Sparkles, LayoutGrid, Calendar } from 'lucide-react'
 import { updateMatchScore, generateBracketMatches, generateNextSwissRound, GameData } from '@/actions/matches'
@@ -61,6 +62,7 @@ export default function BracketView({
   const [walkoverWinner, setWalkoverWinner] = useState<string | null>(null)
   const [activeGroupIdx, setActiveGroupIdx] = useState(0)
   const [activeRoundIdx, setActiveRoundIdx] = useState(0)
+  const router = useRouter()
 
   // Normalize participants and matches
   const normalizedParticipants = React.useMemo(() => {
@@ -252,6 +254,7 @@ export default function BracketView({
     if (result.success) {
       if (result.message) alert(result.message)
       setSelectedMatch(null)
+      router.refresh()
     } else {
       alert(result.error || 'Failed to update score')
     }

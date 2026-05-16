@@ -107,16 +107,36 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
     const otherSubmission = submissions[otherPlayerId]
 
     if (otherSubmission) {
-      const matchGames = JSON.stringify(otherSubmission.games) === JSON.stringify(games)
-      const matchWalkover = otherSubmission.isWalkover === isWalkover
-      const matchWinner = otherSubmission.walkoverWinner === walkoverWinner
+      // Robust comparison of game scores
+      let isMatch = true
+      if (otherSubmission.isWalkover !== isWalkover) isMatch = false
+      if (otherSubmission.walkoverWinner !== walkoverWinner) isMatch = false
+      
+      // Compare each game score
+      if (otherSubmission.games.length !== games.length) {
+        isMatch = false
+      } else {
+        for (let i = 0; i < games.length; i++) {
+          const g1 = otherSubmission.games[i]
+          const g2 = games[i]
+          if (Number(g1.home_score) !== Number(g2.home_score) || 
+              Number(g1.away_score) !== Number(g2.away_score) ||
+              g1.winner_id !== g2.winner_id ||
+              g1.home_forfeit !== g2.home_forfeit ||
+              g1.away_forfeit !== g2.away_forfeit) {
+            isMatch = false
+            break
+          }
+        }
+      }
 
-      if (!matchGames || !matchWalkover || !matchWinner) {
+      if (!isMatch) {
         await supabase.from('matches').update({
           status: 'disputed',
           details: { ...details, submissions }
         }).eq('id', matchIdStr)
-        return { success: true, message: 'Scores differ. Match marked as disputed.' }
+        revalidatePath(`/tournaments/${match.tournament_id}`)
+        return { success: true, message: 'Scores differ. Match marked as disputed for organizer review.' }
       }
       // If matched, continue to finalize below
     } else {
@@ -124,7 +144,8 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
         status: 'submitted',
         details: { ...details, submissions }
       }).eq('id', matchIdStr)
-      return { success: true, message: 'Score submitted. Waiting for opponent.' }
+      revalidatePath(`/tournaments/${match.tournament_id}`)
+      return { success: true, message: 'Score submitted. Waiting for opponent to confirm.' }
     }
   }
 
@@ -213,6 +234,8 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
     .eq('id', matchIdStr)
 
   if (error) return { error: error.message }
+  
+  revalidatePath(`/tournaments/${match.tournament_id}`)
 
   if (isCompleted && (winnerTeamId || winnerPlayerId)) {
     const isDoubleElim = tournament.bracket_structure === 'double_elimination'
