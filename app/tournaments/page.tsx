@@ -88,7 +88,8 @@ export default async function TournamentsCategoryPage({
     date: new Date(t.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }),
     status: t.status.charAt(0).toUpperCase() + t.status.slice(1),
     format: t.format || "Professional",
-    image: t.banner_url || config.image
+    image: t.banner_url || config.image,
+    game: (t.settings as any)?.game || (t.category === 'esport' ? 'Competitive' : t.category)
   })) || [];
 
   return (
@@ -186,7 +187,7 @@ export default async function TournamentsCategoryPage({
                   className="group relative rounded-[2.5rem] border border-white/10 bg-card/40 backdrop-blur-md overflow-hidden hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] hover:border-white/20 transition-all duration-700 block shimmer-glint"
                 >
                   {/* Status Overlay */}
-                  <div className="absolute top-6 right-6 z-20">
+                  <div className="absolute top-6 left-6 z-20">
                     <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] flex items-center space-x-2 glass border shadow-lg ${event.status === 'Open' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-500' :
                       event.status === 'Ongoing' ? 'border-amber-500/30 bg-amber-500/10 text-amber-500' :
                         'border-white/20 bg-white/5 text-slate-300'
@@ -196,6 +197,13 @@ export default async function TournamentsCategoryPage({
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                       </span>}
                       <span>{event.status}</span>
+                    </div>
+                  </div>
+
+                  {/* Game Category Icon Indicator */}
+                  <div className="absolute top-6 right-6 z-20">
+                    <div className="w-10 h-10 rounded-xl glass border border-white/20 flex items-center justify-center text-white shadow-xl">
+                      <Gamepad2 size={20} className={config.accent} />
                     </div>
                   </div>
 
@@ -220,7 +228,15 @@ export default async function TournamentsCategoryPage({
                   </div>
 
                   <div className="p-8">
-                    <p className={`text-[10px] font-black uppercase tracking-[0.3em] mb-3 ${config.accent}`}>{category.toUpperCase()} MASTERCLASS</p>
+                    <div className="flex items-center gap-3 mb-3">
+                      <p className={`text-[10px] font-black uppercase tracking-[0.3em] ${config.accent}`}>
+                        {event.game}
+                      </p>
+                      <span className="w-1 h-1 rounded-full bg-slate-500/30" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-60">
+                        {category}
+                      </p>
+                    </div>
                     <h3 className="text-2xl font-bold text-foreground mb-6 leading-tight group-hover:text-accent-blue transition-all duration-500">
                       {event.name}
                     </h3>

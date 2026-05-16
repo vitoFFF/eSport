@@ -1,6 +1,6 @@
 import React from "react";
 import { createClient } from "@/utils/supabase/server";
-import { Trophy, Users, Calendar, ShieldAlert, GitBranch, LayoutGrid, Target, Shield, RefreshCw } from "lucide-react";
+import { Trophy, Users, Calendar, ShieldAlert, GitBranch, LayoutGrid, Target, Shield, RefreshCw, Timer, Flag, Zap, ArrowRight } from "lucide-react";
 import { registerForTournament, cancelRegistration } from "@/actions/profile";
 import { revalidatePath } from "next/cache";
 import Link from 'next/link';
@@ -8,6 +8,9 @@ import RegistrationForm from "@/components/tournament/RegistrationForm";
 import CancelRegistrationForm from "@/components/tournament/CancelRegistrationForm";
 import BracketView from "@/components/tournament/BracketView";
 import ManualSeeding from "@/components/tournament/ManualSeeding";
+
+import CompetitorsList from "@/components/tournament/CompetitorsList";
+import RulesDescriptionView from "@/components/tournament/RulesDescriptionView";
 
 export default async function TournamentDetailsPage({
   params,
@@ -112,106 +115,117 @@ export default async function TournamentDetailsPage({
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="w-full h-[400px] relative bg-muted">
+      <div className="w-full h-[600px] relative overflow-hidden bg-slate-950">
+        {/* Background Image with Parallax-like Overlay */}
         {tournament.banner_url ? (
-          <img src={tournament.banner_url} alt="Banner" className="w-full h-full object-cover" />
+          <div className="absolute inset-0">
+            <img src={tournament.banner_url} alt="Banner" className="w-full h-full object-cover opacity-60 scale-105" />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent z-10" />
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/40 to-transparent z-10" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(37,99,235,0.1),transparent_50%)] z-10" />
+          </div>
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-             <Trophy className="text-slate-700 h-24 w-24" />
+          <div className="w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 flex items-center justify-center relative">
+             <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+             <Trophy className="text-accent-blue/10 h-64 w-64 animate-pulse" />
           </div>
         )}
-        
-        <div className="absolute top-32 left-6 z-20">
-          <Link href="/tournaments" className="flex items-center space-x-2 text-white hover:text-accent-blue transition-colors group">
-            <div className="p-2 glass rounded-lg border border-white/10 group-hover:bg-white/10 transition-colors">
-              <span className="font-bold">&larr;</span>
-            </div>
-            <span className="text-sm font-bold uppercase tracking-widest text-shadow">Back to Arena</span>
-          </Link>
-        </div>
-      </div>
 
-      <div className="container mx-auto px-6 max-w-[90rem] -mt-32 relative z-10 pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
-          <div className="lg:col-span-2 space-y-8">
-            <div>
-              <span className="inline-block px-3 py-1 rounded-md bg-accent-blue text-white text-[10px] font-black uppercase tracking-widest mb-3 shadow-lg shadow-accent-blue/20">
-                {tournament.category} • {tournament.participation_mode === 'team' ? `${tournament.team_size}v${tournament.team_size}` : '1v1'}
+        {/* Content Container */}
+        <div className="absolute bottom-36 left-12 md:left-20 z-20 max-w-5xl">
+            {/* Game Tag */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="px-5 py-2 rounded-xl bg-accent-blue/20 border border-accent-blue/30 text-accent-blue text-[11px] font-black uppercase tracking-[0.3em] backdrop-blur-xl shadow-[0_0_20px_rgba(37,99,235,0.2)]">
+                {tournament.settings?.game || (tournament.category === 'esport' ? 'Competitive' : tournament.category)}
+              </div>
+              <div className="h-px w-12 bg-white/20" />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/40">
+                {tournament.participation_mode === 'team' ? `${tournament.team_size}v${tournament.team_size}` : '1v1 Duel'}
               </span>
-              <h1 className="text-5xl md:text-6xl font-black text-white uppercase tracking-tight text-shadow-sm">
+            </div>
+
+            {/* Title & Series */}
+            <div className="space-y-4 mb-10">
+              <h4 className="text-[13px] font-black text-accent-purple uppercase tracking-[0.5em] leading-none opacity-80 pl-2">
+                Official Masters Series 2026
+              </h4>
+              <h1 className="text-7xl md:text-9xl font-black text-white uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] leading-[0.85] italic">
                 {tournament.name}
-                {tournament.category === 'esport' && tournament.settings?.game && (
-                  <span className="block text-2xl md:text-3xl text-accent-blue/80 mt-2 font-black uppercase">
-                    {tournament.settings.game}
-                  </span>
-                )}
               </h1>
-              <div className="flex flex-wrap gap-4 mt-4">
-                {tournament.platform && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
-                    <LayoutGrid size={14} className="text-accent-blue" />
-                    <span className="text-xs font-bold text-white/80">{tournament.platform}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
-                  <Calendar size={14} className="text-accent-purple" />
-                  <span className="text-xs font-bold text-white/80">
-                    {tournament.start_date ? new Date(tournament.start_date).toLocaleDateString() : 'TBD'}
+            </div>
+
+            {/* Technical Details */}
+            <div className="flex flex-wrap gap-5">
+              <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-3xl shadow-xl hover:border-white/20 transition-all">
+                <div className="p-2 rounded-lg bg-accent-blue/20 text-accent-blue">
+                  <LayoutGrid size={18} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">Platform</span>
+                  <span className="text-xs font-black text-white uppercase tracking-widest">{tournament.platform || 'Multi-Platform'}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-3xl shadow-xl hover:border-white/20 transition-all">
+                <div className="p-2 rounded-lg bg-accent-purple/20 text-accent-purple">
+                  <Calendar size={18} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-white/30 uppercase tracking-widest leading-none mb-1">Commences</span>
+                  <span className="text-xs font-black text-white uppercase tracking-widest">
+                    {tournament.start_date ? new Date(tournament.start_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'To Be Announced'}
                   </span>
                 </div>
               </div>
-              <p className="text-white/70 mt-6 text-lg max-w-2xl" dangerouslySetInnerHTML={{ __html: tournament.description || "No official description provided for this event." }} />
+
+              {tournament.status === 'active' && (
+                <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-3xl shadow-xl animate-pulse">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981]" />
+                  <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">Live Now</span>
+                </div>
+              )}
             </div>
+        </div>
+
+        {/* Decorative Side Element */}
+        <div className="absolute right-0 bottom-0 top-0 w-1/3 bg-gradient-to-l from-slate-950/40 to-transparent pointer-events-none hidden lg:block" />
+        <div className="absolute right-12 bottom-24 z-10 hidden lg:block">
+          <div className="flex flex-col items-end">
+            <span className="text-[10rem] font-black text-white/[0.03] leading-none select-none tracking-tighter uppercase">
+              {tournament.category}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-6 max-w-[90rem] -mt-24 relative z-20 pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+          <div className="lg:col-span-2 space-y-8">
+            <RulesDescriptionView 
+              description={tournament.description} 
+              rules={tournament.rules} 
+            />
 
             {/* Tournament Format Info Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-               <div className="p-6 rounded-[2rem] bg-card/40 border border-border/50 backdrop-blur-md flex flex-col items-center justify-center text-center space-y-3 hover:border-accent-blue/30 transition-all group">
-                  <div className="p-3 rounded-2xl bg-accent-blue/10 text-accent-blue group-hover:scale-110 transition-transform">
-                     <GitBranch size={24} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Bracket Type</p>
-                    <p className="text-sm font-black uppercase text-foreground">
-                       {tournament.bracket_structure?.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Standard'}
-                    </p>
-                  </div>
-               </div>
-
-               <div className="p-6 rounded-[2rem] bg-card/40 border border-border/50 backdrop-blur-md flex flex-col items-center justify-center text-center space-y-3 hover:border-accent-purple/30 transition-all group">
-                  <div className="p-3 rounded-2xl bg-accent-purple/10 text-accent-purple group-hover:scale-110 transition-transform">
-                     <Target size={24} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Match Format</p>
-                    <p className="text-sm font-black uppercase text-foreground">
-                       {tournament.match_format?.toUpperCase() || 'BO1'}
-                    </p>
-                  </div>
-               </div>
-
-               <div className="p-6 rounded-[2rem] bg-card/40 border border-border/50 backdrop-blur-md flex flex-col items-center justify-center text-center space-y-3 hover:border-emerald-500/30 transition-all group">
-                  <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform">
-                     <Users size={24} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Participation</p>
-                    <p className="text-sm font-black uppercase text-foreground">
-                       {tournament.participation_mode === 'team' ? `${tournament.team_size}v${tournament.team_size}` : '1v1'}
-                    </p>
-                  </div>
-               </div>
-
-               <div className="p-6 rounded-[2rem] bg-card/40 border border-border/50 backdrop-blur-md flex flex-col items-center justify-center text-center space-y-3 hover:border-amber-500/30 transition-all group">
-                  <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform">
-                     <LayoutGrid size={24} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1 opacity-60">Location</p>
-                    <p className="text-sm font-black uppercase text-foreground">
-                       {tournament.location_type === 'online' ? 'Online' : 'LAN/Offline'}
-                    </p>
-                  </div>
-               </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+               {[
+                 { label: 'Bracket Type', value: tournament.bracket_structure?.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Standard', icon: GitBranch, color: 'accent-blue' },
+                 { label: 'Match Format', value: tournament.match_format?.toUpperCase() || 'BO1', icon: Target, color: 'accent-purple' },
+                 { label: 'Participation', value: tournament.participation_mode === 'team' ? `${tournament.team_size}v${tournament.team_size}` : '1v1', icon: Users, color: 'emerald-500' },
+                 { label: 'Location', value: tournament.location_type === 'online' ? 'Online' : 'LAN', icon: LayoutGrid, color: 'amber-500' }
+               ].map((item, i) => (
+                 <div key={i} className="p-8 rounded-[2.5rem] bg-card border border-border shadow-sm hover:shadow-2xl hover:-translate-y-2 hover:border-accent-blue/30 transition-all duration-500 group flex flex-col items-center justify-center text-center space-y-4">
+                    <div className={`p-4 rounded-2xl bg-${item.color}/10 text-${item.color} group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-inner`}>
+                       <item.icon size={28} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2 opacity-60">{item.label}</p>
+                      <p className="text-sm font-black uppercase text-foreground tracking-tight">
+                         {item.value}
+                      </p>
+                    </div>
+                 </div>
+               ))}
             </div>
 
             {/* Confirmed Competitors / Seeding Section */}
@@ -222,83 +236,54 @@ export default async function TournamentDetailsPage({
                 <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground mb-8 flex items-center gap-2">
                   <Users size={20} className="text-accent-purple" /> Confirmed Competitors
                 </h3>
-                {registrations && registrations.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {registrations.map((reg: any) => (
-                      <Link 
-                        href={reg.team_id ? `/teams/${reg.team_id}` : "#"} 
-                        key={reg.id} 
-                        className={`p-5 rounded-2xl bg-muted/30 border border-border flex items-center gap-4 transition-all ${reg.team_id ? 'hover:border-accent-blue/50 hover:bg-muted/60 hover:translate-x-1' : ''}`}
-                      >
-                         <div className="h-14 w-14 rounded-full overflow-hidden bg-gradient-to-br from-slate-700 to-slate-800 flex items-center justify-center shrink-0 border border-white/5 shadow-inner">
-                            {reg.teams?.avatar_url || reg.profiles?.avatar_url ? (
-                               <img src={reg.teams?.avatar_url || reg.profiles?.avatar_url} className="w-full h-full object-cover" />
-                            ) : (
-                              <Users className="text-white/40" size={24} />
-                            )}
-                         </div>
-                         <div>
-                           <p className="font-bold text-lg leading-tight">
-                             {tournament.participation_mode === 'team' || tournament.participation_mode === 'Team NvN' 
-                               ? reg.teams?.name 
-                               : (reg.profiles?.username || reg.profiles?.full_name || 'Unknown Player')}
-                           </p>
-                           <p className="text-[11px] uppercase font-black text-emerald-500 tracking-widest mt-1.5 flex items-center gap-1.5">
-                              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                              Confirmed Entry
-                           </p>
-                         </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-20 text-center rounded-[2rem] border border-dashed border-border/50 flex flex-col items-center justify-center bg-muted/10">
-                     <Users className="text-muted-foreground/20 mb-4 h-16 w-16" />
-                     <p className="text-muted-foreground font-bold italic text-lg text-shadow-sm">The arena is empty. Be the first to register.</p>
-                  </div>
-                )}
+                <CompetitorsList 
+                  registrations={registrations || []} 
+                  participationMode={tournament.participation_mode} 
+                />
               </div>
             )}
           </div>
 
           <div>
             <div className="sticky top-32 space-y-6">
-              <div className="p-8 rounded-[2rem] border border-border bg-gradient-to-b from-card to-muted/30 shadow-2xl">
-                <div className="space-y-6 mb-8">
-                  <div>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Prize Pool</p>
-                    <p className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent-blue to-accent-purple">
-                      {tournament.prize_pool || "TBD"}
+              <div className="p-8 rounded-[2rem] border border-border bg-gradient-to-b from-card to-muted/30 shadow-2xl space-y-8">
+                <div className="space-y-6">
+                  <div className="relative group overflow-hidden p-6 rounded-2xl bg-muted/30 border border-border/50">
+                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">Total Prize Pool</p>
+                    <p className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent-blue via-accent-purple to-accent-blue bg-[length:200%_auto] animate-shimmer">
+                      {tournament.prize_pool ? tournament.prize_pool.replace(/\s?\$\s?$/, '').replace(/^\$/, '$') : "$0"}
                     </p>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm font-bold bg-background p-4 rounded-xl border border-border">
-                    <Calendar size={18} className="text-emerald-500" />
-                    Open for Registration
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <Trophy size={64} className="text-accent-blue" />
+                    </div>
                   </div>
                 </div>
 
                 {/* Schedule & Deadlines */}
-                <div className="space-y-4 mb-8 p-6 rounded-2xl bg-muted/50 border border-border/50">
-                   <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-4">Event Timeline</h4>
+                <div className="p-6 rounded-3xl bg-card border border-border shadow-sm">
+                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50 mb-6 flex items-center gap-2">
+                      <Calendar size={12} className="text-accent-blue" /> Event Timeline
+                   </h4>
                    
-                   <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Reg. Starts</span>
-                         <span className="text-xs font-black">{tournament.registration_start_date ? new Date(tournament.registration_start_date).toLocaleDateString() : 'TBD'}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Reg. Ends</span>
-                         <span className="text-xs font-black">{tournament.registration_end_date ? new Date(tournament.registration_end_date).toLocaleDateString() : 'TBD'}</span>
-                      </div>
-                      <div className="h-px bg-border/50 my-2" />
-                      <div className="flex justify-between items-center">
-                         <span className="text-[10px] font-bold text-muted-foreground uppercase text-accent-blue">Kick-off</span>
-                         <span className="text-xs font-black text-accent-blue">{tournament.start_date ? new Date(tournament.start_date).toLocaleDateString() : 'TBD'}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                         <span className="text-[10px] font-bold text-muted-foreground uppercase">Ends</span>
-                         <span className="text-xs font-black">{tournament.end_date ? new Date(tournament.end_date).toLocaleDateString() : 'TBD'}</span>
-                      </div>
+                   <div className="space-y-4">
+                      {[
+                        { label: 'Reg. Starts', date: tournament.registration_start_date, icon: Flag },
+                        { label: 'Reg. Ends', date: tournament.registration_end_date, icon: Shield },
+                        { label: 'Kick-off', date: tournament.start_date, icon: Zap, highlight: true },
+                        { label: 'Tournament Ends', date: tournament.end_date, icon: Trophy }
+                      ].map((step, idx) => (
+                        <div key={idx} className={`flex items-center justify-between group/item ${step.highlight ? 'py-3 px-4 rounded-xl bg-accent-blue/5 border border-accent-blue/10' : ''}`}>
+                           <div className="flex items-center gap-3">
+                              <div className={`p-1.5 rounded-lg ${step.highlight ? 'bg-accent-blue/10 text-accent-blue' : 'bg-muted text-muted-foreground group-hover/item:text-accent-purple group-hover/item:bg-accent-purple/5 transition-colors'}`}>
+                                 <step.icon size={12} />
+                              </div>
+                              <span className={`text-[10px] font-black uppercase tracking-widest ${step.highlight ? 'text-accent-blue' : 'text-muted-foreground'}`}>{step.label}</span>
+                           </div>
+                           <span className={`text-[11px] font-black ${step.highlight ? 'text-accent-blue' : 'text-foreground'}`}>
+                              {step.date ? new Date(step.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'TBD'}
+                           </span>
+                        </div>
+                      ))}
                    </div>
                 </div>
 
@@ -322,8 +307,8 @@ export default async function TournamentDetailsPage({
                   </div>
                 ) : isRegistered ? (
                   <div className="space-y-4">
-                    <div className="w-full py-5 rounded-2xl bg-emerald-500/10 text-emerald-500 font-black text-center uppercase tracking-widest border border-emerald-500/20 flex flex-col items-center">
-                      <span className="text-2xl mb-1">✓</span>
+                    <div className="w-full py-3.5 rounded-2xl bg-emerald-500/5 text-emerald-600 font-black text-[11px] text-center uppercase tracking-[0.2em] border border-emerald-500/10 flex items-center justify-center gap-2">
+                      <span className="text-lg">✓</span>
                       Registration Confirmed
                     </div>
                     

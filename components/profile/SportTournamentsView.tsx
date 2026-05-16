@@ -132,6 +132,12 @@ export default function SportTournamentsView({ tournaments, activeSport, teams =
 
                   {/* Content */}
                   <div className="p-6 flex-grow flex flex-col">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${meta.accent}`}>
+                        {tournament.settings?.game || (activeSport === 'esport' ? 'Competitive' : activeSport)}
+                      </span>
+                      <span className="w-1 h-1 rounded-full bg-slate-500/20" />
+                    </div>
                     <h3 className="text-lg font-black tracking-tight group-hover:text-[var(--sport-accent)] transition-colors mb-2 line-clamp-1">
                       {tournament.name}
                     </h3>

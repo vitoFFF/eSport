@@ -82,6 +82,23 @@ export default async function ProfilePage({ searchParams }: { searchParams: { ta
     }
   }
 
+  // Fetch real player stats for dashboard
+  const { count: matchesPlayed } = await supabase
+    .from("matches")
+    .select("*", { count: "exact", head: true })
+    .or(`home_player_id.eq.${user.id},away_player_id.eq.${user.id}`);
+
+  const { count: wins } = await supabase
+    .from("matches")
+    .select("*", { count: "exact", head: true })
+    .eq("winner_player_id", user.id);
+
+  const playerStats = {
+    matchesPlayed: matchesPlayed || 0,
+    wins: wins || 0,
+    mvpAwards: profile.mvp_awards || 0
+  };
+
   if (profile.role === "manager") {
     const { data: orgData } = await supabase
       .from("organizations")
@@ -164,7 +181,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: { ta
     <DashboardShell profile={profile} headerRight={headerRight} tournaments={allTournaments} teams={teams} currentTab={tab}>
       {tab === 'overview' && (
         <>
-          {profile.role === "player" && <PlayerProfile profile={profile} playerTeams={playerTeams} teamInvites={teamInvites} />}
+          {profile.role === "player" && <PlayerProfile profile={profile} playerTeams={playerTeams} teamInvites={teamInvites} stats={playerStats} />}
           {profile.role === "manager" && <OrganizationManager profile={profile} organization={organization} teams={teams} />}
           {profile.role === "organizer" && <OrganizerDashboard profile={profile} tournaments={organizerTournaments} />}
         </>

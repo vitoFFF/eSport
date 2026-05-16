@@ -309,80 +309,81 @@ export default function BracketView({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: (roundIdx * 0.1) + (matchIdx * 0.05) }}
           onClick={() => isOrganizer && !isSkeleton && handleEditClick(match)}
-          className={`relative z-10 w-full h-full rounded-[1.5rem] border ${
-            isLive ? 'border-accent-blue/50 ring-1 ring-accent-blue/20 bg-accent-blue/5' : 
-            isDraw ? 'border-amber-500/30 bg-amber-500/5' :
-            'border-white/10 bg-card/40'
-          } backdrop-blur-xl shadow-3d hover:border-accent-blue/50 transition-all duration-500 overflow-hidden flex flex-col luxury-border-glow shimmer-glint ${isSkeleton ? 'opacity-30 grayscale' : ''} ${isOrganizer && !isSkeleton ? 'cursor-pointer hover:translate-y-[-2px]' : ''}`}
+          className={`relative z-10 w-full h-full rounded-[2.5rem] border transition-all duration-700 overflow-hidden flex flex-col group/card ${
+            isLive ? 'border-accent-blue/30 bg-accent-blue/5 shadow-[0_30px_60px_-12px_rgba(37,99,235,0.15)]' : 
+            'border-white/40 border-t-white/80 bg-white/60 backdrop-blur-3xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.12)] hover:border-white/60 hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.18)]'
+          } ${isSkeleton ? 'opacity-30 grayscale' : ''} ${isOrganizer && !isSkeleton ? 'cursor-pointer hover:-translate-y-2' : ''}`}
         >
+          {/* Subtle Rim Light Glow */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none opacity-50" />
+          {/* Decorative Gradient Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/5 via-transparent to-accent-purple/5 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700" />
           {/* Status Badges */}
-          <div className="absolute top-2 left-2 flex items-center gap-2 z-20">
+          <div className="absolute top-4 left-6 flex items-center gap-2 z-20">
             {isLive && (
-              <div className="flex items-center gap-1.5 bg-accent-blue/10 px-2 py-0.5 rounded-full border border-accent-blue/20">
-                <div className="h-1.5 w-1.5 rounded-full bg-accent-blue animate-pulse" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-accent-blue">Live</span>
-              </div>
-            )}
-            {isDraw && (
-              <div className="bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                <span className="text-[8px] font-black uppercase tracking-widest text-amber-500">Draw</span>
+              <div className="flex items-center gap-2 bg-accent-blue px-3 py-1 rounded-full shadow-[0_4px_12px_rgba(37,99,235,0.2)]">
+                <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Live</span>
               </div>
             )}
           </div>
 
           {isOrganizer && !isSkeleton && (
-            <div className="absolute top-2 right-2 p-1.5 rounded-lg bg-accent-blue/10 opacity-0 group-hover:opacity-100 transition-all transform group-hover:scale-110">
-              <Edit3 size={12} className="text-accent-blue" />
+            <div className="absolute top-3 right-3 p-2 rounded-xl bg-accent-blue/10 opacity-0 group-hover/card:opacity-100 transition-all transform hover:scale-110">
+              <Edit3 size={14} className="text-accent-blue" />
             </div>
           )}
 
           {/* Home Team */}
-          <div className={`flex-1 px-5 flex items-center justify-between border-b border-white/5 transition-all duration-500 ${isWinnerHome ? 'bg-emerald-500/10' : isConfirmed ? 'opacity-70' : ''}`}>
-            <div className="flex items-center gap-4">
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerHome ? 'ring-2 ring-emerald-500/50' : 'bg-muted/50'}`}>
+          <div className={`flex-1 px-8 flex items-center justify-between relative transition-all duration-700 ${isWinnerHome ? 'bg-accent-blue/5' : ''}`}>
+            <div className="flex items-center gap-5">
+              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 border transition-all duration-700 group-hover/card:scale-110 ${isWinnerHome ? 'border-accent-blue/20 shadow-md bg-white' : 'border-slate-100 bg-slate-50/50 shadow-inner'}`}>
                 {match.home_team?.avatar_url ? (
                   <img src={match.home_team.avatar_url} className="w-full h-full object-cover" />
                 ) : (
-                  <Users size={16} className="text-muted-foreground/30" />
+                  <Users size={22} className="text-slate-300" />
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className={`text-sm font-black tracking-tight truncate max-w-[130px] uppercase italic ${isWinnerHome ? 'text-white' : isDraw ? 'text-amber-500/80' : 'text-muted-foreground/90'}`}>
+                <span className={`text-[15px] font-bold tracking-tight truncate max-w-[150px] uppercase transition-colors ${isWinnerHome ? 'text-accent-blue' : isConfirmed && !isWinnerHome ? 'text-slate-400' : 'text-slate-900'}`}>
                   {match.home_team?.name || 'TBD'}
                 </span>
-                {isWinnerHome && <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-0.5">Winner</span>}
+                {isWinnerHome && <span className="text-[9px] font-black text-accent-blue/50 uppercase tracking-[0.2em] leading-none mt-1.5">Winner</span>}
               </div>
             </div>
-            <div className={`h-9 w-11 flex items-center justify-center rounded-xl font-black text-base transition-all duration-500 ${
-              isWinnerHome ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-110' : 
-              isDraw ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' :
-              'bg-white/5 text-muted-foreground/50'
+            <div className={`h-11 w-14 flex items-center justify-center rounded-2xl font-black text-xl transition-all duration-700 ${
+              isWinnerHome ? 'bg-gradient-to-br from-accent-blue to-accent-purple text-white shadow-[0_12px_24px_-5px_rgba(37,99,235,0.3)] scale-110' : 
+              'bg-white text-slate-400 border border-slate-100 shadow-sm'
             }`}>
               {match.home_score ?? '-'}
             </div>
           </div>
 
+          {/* Central Separator */}
+          <div className="h-px w-full bg-slate-100/50 relative">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 bg-white rounded-full border border-slate-100 text-[9px] font-black text-slate-300 uppercase tracking-[0.3em] shadow-md z-10">VS</div>
+          </div>
+
           {/* Away Team */}
-          <div className={`flex-1 px-5 flex items-center justify-between transition-all duration-500 ${isWinnerAway ? 'bg-emerald-500/10' : isConfirmed ? 'opacity-70' : ''}`}>
-            <div className="flex items-center gap-4">
-              <div className={`h-10 w-10 rounded-xl flex items-center justify-center overflow-hidden shrink-0 border border-white/10 shadow-inner transition-transform duration-500 group-hover:scale-110 ${isWinnerAway ? 'ring-2 ring-emerald-500/50' : 'bg-muted/50'}`}>
+          <div className={`flex-1 px-8 flex items-center justify-between transition-all duration-700 ${isWinnerAway ? 'bg-accent-blue/5' : ''}`}>
+            <div className="flex items-center gap-5">
+              <div className={`h-12 w-12 rounded-2xl flex items-center justify-center overflow-hidden shrink-0 border transition-all duration-700 group-hover/card:scale-110 ${isWinnerAway ? 'border-accent-blue/20 shadow-md bg-white' : 'border-slate-100 bg-slate-50/50 shadow-inner'}`}>
                 {match.away_team?.avatar_url ? (
                   <img src={match.away_team.avatar_url} className="w-full h-full object-cover" />
                 ) : (
-                  <Users size={16} className="text-muted-foreground/30" />
+                  <Users size={22} className="text-slate-300" />
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className={`text-sm font-black tracking-tight truncate max-w-[130px] uppercase italic ${isWinnerAway ? 'text-white' : isDraw ? 'text-amber-500/80' : 'text-muted-foreground/90'}`}>
+                <span className={`text-[15px] font-bold tracking-tight truncate max-w-[150px] uppercase transition-colors ${isWinnerAway ? 'text-accent-blue' : isConfirmed && !isWinnerAway ? 'text-slate-400' : 'text-slate-900'}`}>
                   {match.away_team?.name || 'TBD'}
                 </span>
-                {isWinnerAway && <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-0.5">Winner</span>}
+                {isWinnerAway && <span className="text-[9px] font-black text-accent-blue/60 uppercase tracking-[0.2em] leading-none mt-1.5">Winner</span>}
               </div>
             </div>
-            <div className={`h-9 w-11 flex items-center justify-center rounded-xl font-black text-base transition-all duration-500 ${
-              isWinnerAway ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] scale-110' : 
-              isDraw ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30' :
-              'bg-white/5 text-muted-foreground/50'
+            <div className={`h-11 w-14 flex items-center justify-center rounded-2xl font-black text-xl transition-all duration-700 ${
+              isWinnerAway ? 'bg-gradient-to-br from-accent-blue to-accent-purple text-white shadow-[0_12px_24px_-5px_rgba(37,99,235,0.3)] scale-110' : 
+              'bg-white text-slate-400 border border-slate-100 shadow-sm'
             }`}>
               {match.away_score ?? '-'}
             </div>
@@ -757,30 +758,43 @@ export default function BracketView({
 
           {/* Match Schedule with Round Tabs */}
           <div className="space-y-8">
-            <div className="flex flex-col items-center gap-6">
-              <h4 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-3">
-                <Calendar size={18} className="text-accent-blue" /> 
-                Match Schedule
+            <div className="flex flex-col items-center gap-10">
+            <div className="flex flex-col items-center gap-2">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-accent-blue/60 flex items-center gap-2 mb-2">
+                <Sparkles size={12} className="animate-pulse" /> Tournament Schedule
               </h4>
-              
+              <h3 className="text-3xl font-black uppercase tracking-tighter text-foreground flex items-center gap-4">
+                <Calendar size={32} className="text-accent-blue" /> 
+                Match Schedule
+              </h3>
+            </div>
+            
             {rounds.length > 1 && (
-                <div className="flex flex-wrap justify-center gap-3 p-2 bg-white/5 rounded-[2rem] border border-white/10 w-fit backdrop-blur-md shadow-inner">
+                <div className="flex flex-wrap justify-center gap-2 p-2 bg-card/60 backdrop-blur-2xl rounded-[2.5rem] border border-white/5 shadow-2xl relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-accent-blue/5 to-accent-purple/5 rounded-[2.5rem] pointer-events-none" />
                   {rounds.map((round) => (
                     <button
                       key={round}
                       onClick={() => setActiveRoundIdx(round)}
-                      className={`px-8 py-3 rounded-[1.5rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 ${
+                      className={`relative px-10 py-4 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.3em] transition-all duration-500 group ${
                         currentRoundIdx === round 
-                          ? 'bg-gradient-to-r from-accent-blue to-accent-purple text-white shadow-lg shadow-accent-blue/30 scale-105' 
+                          ? 'bg-gradient-to-r from-accent-blue to-accent-purple text-white shadow-[0_10px_30px_rgba(37,99,235,0.3)] scale-105 z-10' 
                           : 'text-muted-foreground hover:text-white hover:bg-white/5'
                       }`}
                     >
                       Round {round + 1}
+                      {currentRoundIdx === round && (
+                        <motion.div 
+                          layoutId="activeTab"
+                          className="absolute inset-0 rounded-[2rem] bg-white/10 blur-md"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
                     </button>
                   ))}
                 </div>
               )}
-            </div>
+          </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 max-w-5xl mx-auto px-4">
               <AnimatePresence mode="wait">

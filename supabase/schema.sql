@@ -1,13 +1,6 @@
--- Drop existing tables to ensure clean migration (Note: This wipes local test data)
-DROP TABLE IF EXISTS public.rankings,
-public.media,
-public.matches,
-public.tournament_registrations,
-public.tournaments,
-public.team_members,
-public.teams,
-public.organizations,
-public.profiles CASCADE;
+-- WARNING: Do NOT run this full script on a production database with real data.
+-- This script is for initial setup or reference only.
+-- For updates, use additive migrations (ALTER TABLE).
 
 -- Custom ENUM for user roles
 DO $$ BEGIN
@@ -314,7 +307,6 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger to call handle_new_user on signup
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users

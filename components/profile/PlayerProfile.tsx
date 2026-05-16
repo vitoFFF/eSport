@@ -2,13 +2,18 @@
 
 import { useState } from 'react'
 import { updateProfile, respondToInvite, leaveTeam } from '@/actions/profile'
-import { User, Gamepad2, Save, CheckCircle2, AlertCircle, Trophy, Users, Star, Swords, Calendar, ChevronRight, Target, Zap, Rocket, BadgeCheck, LayoutDashboard } from 'lucide-react'
+import { User, Gamepad2, Save, CheckCircle2, AlertCircle, Trophy, Users, Star, Swords, Calendar, ChevronRight, Target, Zap, Rocket, BadgeCheck, LayoutDashboard, Lock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface PlayerProfileProps {
   profile: any
   playerTeams?: any[]
   teamInvites?: any[]
+  stats?: {
+    matchesPlayed: number
+    wins: number
+    mvpAwards: number
+  }
 }
 
 const AVAILABLE_GAMES = [
@@ -62,9 +67,13 @@ const LEADERBOARD_PLAYERS = [
   { rank: 1242, name: 'You', points: 1842, winRate: '68%', avatar: null, trend: 'up', isCurrent: true },
 ]
 
-export default function PlayerProfile({ profile, playerTeams = [], teamInvites = [] }: PlayerProfileProps) {
+export default function PlayerProfile({ profile, playerTeams = [], teamInvites = [], stats }: PlayerProfileProps) {
   const [activeTab, setActiveTab] = useState<'achievements' | 'activity' | 'rosters'>('achievements')
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+  const winRate = stats?.matchesPlayed && stats.matchesPlayed > 0 
+    ? Math.round((stats.wins / stats.matchesPlayed) * 100) 
+    : 0;
 
   const tabItems = [
     { id: 'achievements', label: 'Achievements', icon: <Star size={14} /> },
@@ -83,10 +92,10 @@ export default function PlayerProfile({ profile, playerTeams = [], teamInvites =
       )}
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="Win Rate" value="68%" sub="Last 30 days" icon={<Trophy size={20} className="text-amber-400" />} trend="+5%" />
-        <StatCard label="Matches Played" value="142" sub="Career Total" icon={<Gamepad2 size={20} className="text-accent-blue" />} />
+        <StatCard label="Win Rate" value={`${winRate}%`} sub="Career Average" icon={<Trophy size={20} className="text-amber-400" />} />
+        <StatCard label="Matches Played" value={stats?.matchesPlayed?.toString() || "0"} sub="Career Total" icon={<Gamepad2 size={20} className="text-accent-blue" />} />
         <StatCard label="Active Teams" value={playerTeams.length.toString()} sub="Competing In" icon={<Users size={20} className="text-accent-purple" />} />
-        <StatCard label="MVP Awards" value="12" sub="Achievements" icon={<Star size={20} className="text-pink-500" />} trend="New" />
+        <StatCard label="MVP Awards" value={stats?.mvpAwards?.toString() || "0"} sub="Achievements" icon={<Star size={20} className="text-pink-500" />} trend={stats?.mvpAwards && stats.mvpAwards > 0 ? "Verified" : undefined} />
       </div>
 
       {/* Top Row: Analytics & History (Side by Side) */}
@@ -120,6 +129,7 @@ export default function PlayerProfile({ profile, playerTeams = [], teamInvites =
             <div className="w-full xl:w-3/5 flex justify-center scale-150 transform-gpu">
               <RadarChart data={RADAR_DATA} />
             </div>
+            <ComingSoonOverlay message="Skill Matrix Unlocks After 5 Ranked Matches" />
           </div>
         </div>
 
@@ -132,7 +142,8 @@ export default function PlayerProfile({ profile, playerTeams = [], teamInvites =
             </h3>
             <button className="text-[10px] font-black uppercase tracking-widest text-accent-blue hover:underline">View All</button>
           </div>
-          <div className="space-y-4 flex-grow">
+          <div className="space-y-4 flex-grow relative">
+            <ComingSoonOverlay message="Battle History Coming Soon" />
             {MOCK_MATCHES.map((match, idx) => (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
@@ -178,6 +189,8 @@ export default function PlayerProfile({ profile, playerTeams = [], teamInvites =
                 Season 4
               </div>
             </div>
+
+            <ComingSoonOverlay message="Global Ranking System in Development" />
 
             <div className="space-y-4">
               {LEADERBOARD_PLAYERS.map((player) => (
@@ -429,6 +442,8 @@ export default function PlayerProfile({ profile, playerTeams = [], teamInvites =
               </button>
             </div>
 
+            <ComingSoonOverlay message="Media Highlights Coming Soon" />
+
             <div className="space-y-4 flex-grow overflow-y-auto no-scrollbar">
               {MOCK_HIGHLIGHTS.map((highlight) => (
                 <div key={highlight.id} className="relative rounded-2xl overflow-hidden group/item cursor-pointer aspect-video border border-border/50">
@@ -646,4 +661,27 @@ function RadarChart({ data }: { data: { label: string, value: number }[] }) {
       </svg>
     </div>
   );
+}
+
+function ComingSoonOverlay({ message }: { message: string }) {
+  return (
+    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center p-6 text-center">
+      <div className="absolute inset-0 bg-background/40 backdrop-blur-[6px] transition-all group-hover:backdrop-blur-[8px]" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="relative z-10 flex flex-col items-center gap-4"
+      >
+        <div className="w-16 h-16 rounded-full bg-accent-blue/10 border border-accent-blue/20 flex items-center justify-center text-accent-blue shadow-[0_0_30px_rgba(37,99,235,0.2)]">
+          <Lock size={28} />
+        </div>
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.2em] text-foreground mb-1">Feature Locked</p>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest max-w-[150px] mx-auto leading-relaxed">
+            {message}
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  )
 }
