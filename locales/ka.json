@@ -176,5 +176,15 @@
       "createAccount": "ანგარიშის შექმნა",
       "regSuccess": "რეგისტრაცია წარმატებით დასრულდა. გთხოვთ გაიაროთ ავტორიზაცია."
     }
+  },
+  "tournament": {
+    "autoDraw": "🎲 ავტომატური წილისყრა",
+    "manualSeeding": "✍️ მექანიკური განაწილება",
+    "groupA": "ჯგუფი A",
+    "groupB": "ჯგუფი B",
+    "saveAssignments": "განაწილების შენახვა",
+    "exitEditMode": "რედაქტირების დასრულება",
+    "confirmedCompetitors": "დადასტურებული მონაწილეები",
+    "competitorPool": "მონაწილეთა სია"
   }
 }

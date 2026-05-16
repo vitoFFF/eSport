@@ -406,12 +406,23 @@ export async function generateBracketMatches(tournamentId: string) {
       
     const groups: any[][] = Array.from({length: groupCount}, () => []);
     
-    // Snake seeding distribution
-    for (let i = 0; i < registrations.length; i++) {
-        const roundTrip = Math.floor(i / groupCount);
-        const direction = roundTrip % 2 === 0 ? 1 : -1;
-        const groupIndex = direction === 1 ? i % groupCount : (groupCount - 1) - (i % groupCount);
-        groups[groupIndex].push(registrations[i]);
+    // Check if any registrations have manual group assignments
+    const hasManualGroups = registrations.some(r => r.details?.group_index !== undefined && r.details?.group_index !== null);
+
+    if (hasManualGroups) {
+        registrations.forEach(reg => {
+            const groupIndex = reg.details?.group_index ?? 0;
+            const targetGroup = Math.min(groupIndex, groupCount - 1);
+            groups[targetGroup].push(reg);
+        });
+    } else {
+        // Snake seeding distribution
+        for (let i = 0; i < registrations.length; i++) {
+            const roundTrip = Math.floor(i / groupCount);
+            const direction = roundTrip % 2 === 0 ? 1 : -1;
+            const groupIndex = direction === 1 ? i % groupCount : (groupCount - 1) - (i % groupCount);
+            groups[groupIndex].push(registrations[i]);
+        }
     }
 
     const structuredGroups: any[] = [];
@@ -677,6 +688,55 @@ export async function generateNextSwissRound(tournamentId: string) {
 
   const { error } = await supabase.from('matches').insert(nextRoundMatches)
   if (error) return { error: error.message }
+
+  revalidatePath(`/tournaments/${tournamentId}`)
+  return { success: true }
+}
+
+export async function updateRegistrationGroups(tournamentId: string, assignments: { id: string, groupIndex: number | null }[]) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: tournament } = await supabase.from('tournaments').select('organizer_id').eq('id', tournamentId).single()
+  if (!tournament || tournament.organizer_id !== user.id) return { error: 'Not authorized' }
+
+  for (const item of assignments) {
+      const { data: reg } = await supabase.from('tournament_registrations').select('details').eq('id', item.id).single()
+      const details = reg?.details || {}
+      await supabase.from('tournament_registrations').update({
+          details: { ...details, group_index: item.groupIndex }
+      }).eq('id', item.id)
+  }
+
+  revalidatePath(`/tournaments/${tournamentId}`)
+  return { success: true }
+}
+
+export async function shuffleRegistrations(tournamentId: string, groupCount: number = 2) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: tournament } = await supabase.from('tournaments').select('organizer_id').eq('id', tournamentId).single()
+  if (!tournament || tournament.organizer_id !== user.id) return { error: 'Not authorized' }
+
+  const { data: registrations } = await supabase.from('tournament_registrations').select('id, details').eq('tournament_id', tournamentId)
+  if (!registrations) return { error: 'No registrations found' }
+
+  const shuffled = [...registrations]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  for (let i = 0; i < shuffled.length; i++) {
+      const groupIndex = i % groupCount
+      const details = shuffled[i].details || {}
+      await supabase.from('tournament_registrations').update({
+          details: { ...details, group_index: groupIndex }
+      }).eq('id', shuffled[i].id)
+  }
 
   revalidatePath(`/tournaments/${tournamentId}`)
   return { success: true }

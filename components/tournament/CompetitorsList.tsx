@@ -51,6 +51,11 @@ export default function CompetitorsList({ registrations, participationMode }: Co
                <p className="text-[11px] uppercase font-black text-emerald-500 tracking-widest mt-1.5 flex items-center gap-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   Confirmed Entry
+                  {reg.details?.group_index !== undefined && reg.details?.group_index !== null && (
+                    <span className={`ml-2 px-2 py-0.5 rounded-md border ${reg.details.group_index === 0 ? 'bg-accent-blue/10 text-accent-blue border-accent-blue/20' : 'bg-accent-purple/10 text-accent-purple border-accent-purple/20'}`}>
+                      Group {String.fromCharCode(65 + reg.details.group_index)}
+                    </span>
+                  )}
                </p>
              </div>
           </Link>
