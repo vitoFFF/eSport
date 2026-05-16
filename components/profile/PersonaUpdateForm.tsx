@@ -11,7 +11,7 @@ interface PersonaUpdateFormProps {
 }
 
 const AVAILABLE_GAMES = [
-  'Valorant', 'League of Legends', 'CS:GO', 'Dota 2', 
+  'Valorant', 'League of Legends', 'CS:GO', 'Dota 2',
   'Rocket League', 'FIFA', 'Call of Duty', 'Overwatch 2',
   'eFootball', 'eFootball Mobile', 'Apex Legends', 'PUBG Mobile'
 ]
@@ -25,7 +25,7 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const toggleGame = (game: string) => {
-    setSelectedGames(prev => 
+    setSelectedGames(prev =>
       prev.includes(game) ? prev.filter(g => g !== game) : [...prev, game]
     )
   }
@@ -79,7 +79,7 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
     selectedGames.forEach(game => formData.append('games', game))
 
     const result = await updateProfile(formData)
-    
+
     if (result.error) {
       setMessage({ type: 'error', text: result.error })
     } else {
@@ -91,7 +91,7 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
   return (
     <div className="p-10 dash-card relative overflow-hidden group max-w-4xl mx-auto">
       <div className="absolute top-0 right-0 w-64 h-64 bg-accent-blue/5 blur-3xl -z-10 group-hover:bg-accent-blue/10 transition-colors" />
-      
+
       <div className="flex items-center gap-8 mb-12">
         <div className="relative group/avatar cursor-pointer" onClick={handleAvatarClick}>
           <div className="h-24 w-24 rounded-full bg-gradient-to-tr from-accent-blue to-accent-purple flex items-center justify-center text-white shadow-2xl shadow-accent-blue/20 overflow-hidden relative border-4 border-card transition-transform group-hover/avatar:scale-105">
@@ -100,7 +100,7 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
             ) : (
               <User size={40} />
             )}
-            
+
             {/* Upload Overlay */}
             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
               {isUploading ? (
@@ -111,11 +111,11 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
             </div>
           </div>
           <div className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-emerald-500 border-4 border-card" />
-          
-          <input 
-            type="file" 
+
+          <input
+            type="file"
             ref={fileInputRef}
-            className="hidden" 
+            className="hidden"
             accept="image/*"
             onChange={handleFileChange}
             disabled={isUploading}
@@ -129,9 +129,8 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-10 text-left">
         {message && (
-          <div className={`p-5 rounded-2xl flex items-center gap-4 text-sm font-bold animate-in fade-in slide-in-from-top-2 ${
-            message.type === 'success' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'
-          }`}>
+          <div className={`p-5 rounded-2xl flex items-center gap-4 text-sm font-bold animate-in fade-in slide-in-from-top-2 ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'
+            }`}>
             {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
             {message.text}
           </div>
@@ -156,11 +155,10 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
                   key={game}
                   type="button"
                   onClick={() => toggleGame(game)}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                    selectedGames.includes(game)
+                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${selectedGames.includes(game)
                       ? 'bg-accent-blue text-white border-accent-blue shadow-lg shadow-accent-blue/20'
                       : 'bg-muted/30 border-border text-muted-foreground hover:border-border/80'
-                  }`}
+                    }`}
                 >
                   <Gamepad2 size={16} />
                   {game}
