@@ -12,7 +12,8 @@ interface PersonaUpdateFormProps {
 
 const AVAILABLE_GAMES = [
   'Valorant', 'League of Legends', 'CS:GO', 'Dota 2', 
-  'Rocket League', 'FIFA', 'Call of Duty', 'Overwatch 2'
+  'Rocket League', 'FIFA', 'Call of Duty', 'Overwatch 2',
+  'eFootball', 'eFootball Mobile', 'Apex Legends', 'PUBG Mobile'
 ]
 
 export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {

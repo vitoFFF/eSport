@@ -299,6 +299,7 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                       { value: 'Rocket League', label: 'Rocket League', emoji: '🏎️' },
                       { value: 'NBA2K', label: 'NBA 2K', emoji: '🏀' },
                       { value: 'eFootball', label: 'eFootball', emoji: '⚽' },
+                      { value: 'eFootball Mobile', label: 'eFootball Mobile', emoji: '📱' },
                     ]}
                   />
                 )}
