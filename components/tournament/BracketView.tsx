@@ -217,7 +217,15 @@ export default function BracketView({
     setEditGames(games)
     setIsWalkover(match.details?.is_walkover || false)
     setWalkoverWinner(match.details?.is_walkover ? (match.winner_team_id || match.winner_player_id) : null)
-    setScreenshotUrl(match.details?.screenshot_url || null)
+    
+    // Check for screenshot in main details or in submissions
+    let foundScreenshot = match.details?.screenshot_url
+    if (!foundScreenshot && match.details?.submissions) {
+      const subs = Object.values(match.details.submissions) as any[]
+      const subWithImg = subs.find(s => s.screenshot_url)
+      if (subWithImg) foundScreenshot = subWithImg.screenshot_url
+    }
+    setScreenshotUrl(foundScreenshot || null)
   }
 
   const handleGenerateBracket = async () => {
@@ -345,60 +353,78 @@ export default function BracketView({
     const isWinnerAway = (match.winner_team_id && match.winner_team_id === match.away_team_id) || (match.winner_player_id && match.winner_player_id === match.away_player_id)
     const isConfirmed = match.status === 'confirmed'
     const isLive = match.status === 'in_progress'
+    const isSubmitted = match.status === 'submitted'
+    const isDisputed = match.status === 'disputed'
     const isDraw = isConfirmed && match.home_score === match.away_score && match.home_score !== null
 
     const isPlayerInMatch = currentUserId && (match.home_player_id === currentUserId || match.away_player_id === currentUserId || match.home_team_id === currentUserId || match.away_team_id === currentUserId)
-    const canEdit = (isOrganizer || isPlayerInMatch) && !isSkeleton && !isConfirmed
+    const canEdit = isOrganizer || (isPlayerInMatch && !isSkeleton && !isConfirmed)
 
     return (
       <div key={match.id} className="relative group" style={{ height: CARD_HEIGHT }}>
+        {/* Status Dots & Proof Badge (Above Card) */}
+        <div className="absolute -top-7 left-2 flex items-center gap-3 z-30">
+          {isLive && (
+            <div className="flex items-center gap-2 bg-accent-blue/10 backdrop-blur-md px-3 py-1 rounded-full border border-accent-blue/20 shadow-sm">
+              <div className="h-1.5 w-1.5 rounded-full bg-accent-blue animate-pulse" />
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-accent-blue">Live</span>
+            </div>
+          )}
+          {isSubmitted && (
+            <div className="flex items-center gap-2 bg-amber-500/10 backdrop-blur-md px-3 py-1 rounded-full border border-amber-500/20 shadow-sm">
+              <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-500">Pending</span>
+            </div>
+          )}
+          {isDisputed && (
+            <div className="flex items-center gap-2 bg-red-500/10 backdrop-blur-md px-3 py-1 rounded-full border border-red-500/20 shadow-sm">
+              <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-bounce" />
+              <span className="text-[8px] font-black uppercase tracking-[0.2em] text-red-500">Disputed</span>
+            </div>
+          )}
+          {(() => {
+            const hasProof = match.details?.screenshot_url || (match.details?.submissions && Object.values(match.details.submissions).some((s: any) => s.screenshot_url));
+            if (hasProof) {
+              return (
+                <div 
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const submissions = match.details?.submissions || {};
+                    const url = match.details?.screenshot_url || (Object.values(submissions).find((s: any) => s.screenshot_url) as any)?.screenshot_url;
+                    if (url) window.open(url, '_blank')
+                  }}
+                  className="flex items-center gap-2 bg-card/80 backdrop-blur-md px-3 py-1 rounded-full border border-border shadow-sm hover:bg-muted transition-colors cursor-pointer group/screenshot"
+                >
+                  <ImageIcon size={11} className="text-accent-blue group-hover/screenshot:scale-110 transition-transform" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Proof</span>
+                </div>
+              );
+            }
+            return null;
+          })()}
+        </div>
+
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: (roundIdx * 0.1) + (matchIdx * 0.05) }}
           onClick={() => canEdit && handleEditClick(match)}
           className={`relative z-10 w-full h-full rounded-[2.5rem] border transition-all duration-700 overflow-hidden flex flex-col group/card ${
-            isLive ? 'border-accent-blue/30 bg-accent-blue/5 shadow-[0_30px_60px_-12px_rgba(37,99,235,0.15)]' : 
+            isLive ? 'border-accent-blue/50 bg-accent-blue/5 shadow-[0_20px_40px_-12px_rgba(37,99,235,0.2)]' : 
+            isSubmitted ? 'border-amber-500/50 bg-amber-500/5 shadow-[0_20px_40px_-12px_rgba(245,158,11,0.2)]' :
+            isDisputed ? 'border-red-500/50 bg-red-500/5 shadow-[0_20px_40px_-12px_rgba(239,68,68,0.2)]' :
             'border-border/40 border-t-white/10 bg-card/60 backdrop-blur-3xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.12)] hover:border-border/60 hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.18)]'
           } ${isSkeleton ? 'opacity-30 grayscale' : ''} ${canEdit ? 'cursor-pointer hover:-translate-y-2' : ''}`}
         >
           {/* Subtle Rim Light Glow */}
           <div className="absolute inset-0 bg-gradient-to-b from-card/60 to-transparent pointer-events-none opacity-50" />
-          {/* Decorative Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/5 via-transparent to-accent-purple/5 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700" />
-          {/* Status Badges */}
-          <div className="absolute top-4 left-6 flex items-center gap-2 z-20">
-            {isLive && (
-              <div className="flex items-center gap-2 bg-accent-blue px-3 py-1 rounded-full shadow-[0_4px_12px_rgba(37,99,235,0.2)]">
-                <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Live</span>
-              </div>
-            )}
-            {match.status === 'submitted' && (
-              <div className="flex items-center gap-2 bg-amber-500 px-3 py-1 rounded-full shadow-[0_4px_12px_rgba(245,158,11,0.2)]">
-                <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Pending Verification</span>
-              </div>
-            )}
-            {match.status === 'disputed' && (
-              <div className="flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full shadow-[0_4px_12px_rgba(239,68,68,0.2)]">
-                <div className="h-1.5 w-1.5 rounded-full bg-white animate-bounce" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Disputed</span>
-              </div>
-            )}
-            {match.details?.screenshot_url && (
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation()
-                  window.open(match.details.screenshot_url, '_blank')
-                }}
-                className="flex items-center gap-2 bg-muted/80 backdrop-blur-md px-3 py-1 rounded-full border border-border/50 shadow-sm hover:bg-muted transition-colors cursor-pointer group/screenshot"
-              >
-                <ImageIcon size={12} className="text-accent-blue group-hover/screenshot:scale-110 transition-transform" />
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground">Proof</span>
-              </div>
-            )}
-          </div>
+          {/* Decorative Gradient Background Status-aware */}
+          <div className={`absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 bg-gradient-to-br ${
+            isLive ? 'from-accent-blue/10 to-transparent' :
+            isSubmitted ? 'from-amber-500/10 to-transparent' :
+            isDisputed ? 'from-red-500/10 to-transparent' :
+            'from-accent-blue/5 via-transparent to-accent-purple/5'
+          }`} />
 
           {canEdit && (
             <div className="absolute top-3 right-3 p-2 rounded-xl bg-accent-blue/10 opacity-0 group-hover/card:opacity-100 transition-all transform hover:scale-110">
@@ -1169,7 +1195,7 @@ export default function BracketView({
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-md bg-card border border-border p-8 rounded-[2.5rem] shadow-2xl space-y-8"
+              className="relative w-full max-w-2xl bg-card border border-border p-8 rounded-[2.5rem] shadow-2xl space-y-8"
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -1185,25 +1211,7 @@ export default function BracketView({
               </div>
 
               <div className="space-y-6">
-                <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-muted/30">
-                  <input type="checkbox" checked={isWalkover} onChange={(e) => setIsWalkover(e.target.checked)} className="h-5 w-5 rounded-md border-border text-accent-blue focus:ring-accent-blue" />
-                  <label className="text-sm font-bold uppercase tracking-widest">Mark as Walkover (W.O.)</label>
-                </div>
-
-                {isWalkover ? (
-                  <div className="space-y-4">
-                     <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Select Winner</p>
-                     <div className="flex gap-4">
-                       <button onClick={() => setWalkoverWinner(selectedMatch.home_team_id || selectedMatch.home_player_id)} className={`flex-1 p-4 rounded-2xl border font-bold transition-all ${walkoverWinner === (selectedMatch.home_team_id || selectedMatch.home_player_id) ? 'border-accent-blue bg-accent-blue/10 text-accent-blue' : 'border-border bg-card'}`}>
-                         {selectedMatch.home_team?.name || 'Home Team'}
-                       </button>
-                       <button onClick={() => setWalkoverWinner(selectedMatch.away_team_id || selectedMatch.away_player_id)} className={`flex-1 p-4 rounded-2xl border font-bold transition-all ${walkoverWinner === (selectedMatch.away_team_id || selectedMatch.away_player_id) ? 'border-accent-blue bg-accent-blue/10 text-accent-blue' : 'border-border bg-card'}`}>
-                         {selectedMatch.away_team?.name || 'Away Team'}
-                       </button>
-                     </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
                     {editGames.map((game, index) => {
                       const homeId = selectedMatch.home_team_id || selectedMatch.home_player_id
                       const awayId = selectedMatch.away_team_id || selectedMatch.away_player_id
@@ -1231,10 +1239,6 @@ export default function BracketView({
 
                       return (
                         <div key={index} className="p-4 rounded-2xl bg-muted/30 border border-border space-y-4 relative">
-                          <div className="absolute -top-3 left-4 bg-card px-2 text-[10px] font-black uppercase tracking-widest text-accent-blue border border-border rounded-full">
-                            Game {index + 1}
-                          </div>
-                          
                           {/* Home Row */}
                           <div className="flex items-center justify-between gap-3 pt-2">
                             <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -1338,78 +1342,137 @@ export default function BracketView({
                       )
                     })}
                   </div>
-                )}
               </div>
               
               {/* Screenshot Verification Section */}
-              <div className="pt-4 border-t border-border/50 space-y-4">
+              <div className="pt-6 border-t border-border/50 space-y-6">
                 <div className="flex items-center justify-between">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Match Screenshot</p>
-                  {isOrganizer && screenshotUrl && (
-                    <a 
-                      href={screenshotUrl} 
-                      download={`match_${selectedMatch.id}_screenshot`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-accent-blue hover:text-accent-blue/80 transition-colors"
-                    >
-                      <Download size={12} /> Download
-                    </a>
-                  )}
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                    <ImageIcon size={14} className="text-accent-blue" />
+                    Match Evidence
+                  </p>
                 </div>
 
-                {screenshotUrl ? (
-                  <div className="relative group aspect-video rounded-2xl overflow-hidden border border-border bg-muted/30">
-                    <img src={screenshotUrl} alt="Match Result" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                      <a 
-                        href={screenshotUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all"
-                      >
-                        <ExternalLink size={18} />
-                      </a>
-                      {!isOrganizer && (
-                        <button 
-                          onClick={() => setScreenshotUrl(null)}
-                          className="p-2 rounded-xl bg-red-500/20 backdrop-blur-md text-red-500 hover:bg-red-500/30 transition-all"
-                        >
-                          <X size={18} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-8 rounded-2xl border-2 border-dashed border-border bg-muted/20 text-center space-y-3">
-                    <div className="h-10 w-10 rounded-xl bg-accent-blue/10 flex items-center justify-center">
-                      <ImageIcon size={20} className="text-accent-blue" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold">No screenshot uploaded</p>
-                      <p className="text-[10px] text-muted-foreground mt-1 uppercase tracking-widest">Provide proof of match result</p>
-                    </div>
-                    {!isOrganizer && (
-                      <>
+                {/* Proof Gallery */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Collect all submissions with screenshots */}
+                  {(() => {
+                    const submissions = selectedMatch.details?.submissions || {};
+                    const submissionEntries = Object.entries(submissions).filter(([_, sub]: [string, any]) => sub.screenshot_url);
+                    
+                    // If no screenshots in submissions but one in top-level (for backward compatibility)
+                    if (submissionEntries.length === 0 && screenshotUrl) {
+                      submissionEntries.push(['primary', { screenshot_url: screenshotUrl }]);
+                    }
+
+                    return submissionEntries.map(([uid, sub]: [string, any], idx) => {
+                      const player = registrations.find(r => r.player_id === uid || r.team_id === uid);
+                      const playerName = player?.teams?.name || player?.profiles?.username || player?.profiles?.full_name || (uid === 'primary' ? 'Evidence' : 'Player');
+                      
+                      return (
+                        <div key={uid} className="space-y-2 group/proof">
+                          <div className="flex items-center justify-between px-1">
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{playerName}&apos;s Proof</span>
+                            <div className="flex items-center gap-2">
+                              <a 
+                                href={sub.screenshot_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="p-1.5 rounded-lg bg-accent-blue/10 text-accent-blue hover:bg-accent-blue/20 transition-all"
+                                title="Open Full Size"
+                              >
+                                <ExternalLink size={12} />
+                              </a>
+                              {isOrganizer && (
+                                <a 
+                                  href={sub.screenshot_url} 
+                                  download={`match_${selectedMatch.id}_${playerName}_proof`}
+                                  className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-all"
+                                  title="Download Proof"
+                                >
+                                  <Download size={12} />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                          <div className="relative aspect-video rounded-2xl overflow-hidden border border-border/50 bg-card/40 group-hover/proof:border-accent-blue/30 transition-all shadow-sm">
+                            <img src={sub.screenshot_url} alt={`${playerName} Proof`} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover/proof:opacity-100 transition-opacity flex items-end p-3">
+                              <span className="text-[9px] font-bold text-white/80 uppercase tracking-widest">Verified Evidence</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()}
+
+                  {/* Upload Section for Players (if they haven't uploaded yet or want to replace) */}
+                  {!isOrganizer && (
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">Your Submission</span>
+                      {screenshotUrl ? (
+                        <div className="relative aspect-video rounded-2xl overflow-hidden border-2 border-accent-blue/30 bg-accent-blue/5 group/own-proof">
+                          <img src={screenshotUrl} alt="Your Proof" className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <button 
+                              onClick={() => fileInputRef.current?.click()}
+                              className="p-2 rounded-xl bg-white/10 backdrop-blur-md text-white hover:bg-white/20 transition-all"
+                            >
+                              <Upload size={18} />
+                            </button>
+                            <button 
+                              onClick={() => setScreenshotUrl(null)}
+                              className="p-2 rounded-xl bg-red-500/20 backdrop-blur-md text-red-500 hover:bg-red-500/30 transition-all"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
                         <button 
                           onClick={() => fileInputRef.current?.click()}
                           disabled={isUploading}
-                          className="px-4 py-2 bg-accent-blue/10 text-accent-blue rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-accent-blue/20 transition-all flex items-center gap-2"
+                          className="w-full aspect-video flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border hover:border-accent-blue/30 hover:bg-accent-blue/5 transition-all group/upload"
                         >
-                          {isUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                          Upload Image
+                          <div className="h-10 w-10 rounded-2xl bg-accent-blue/10 flex items-center justify-center group-hover/upload:scale-110 transition-transform">
+                            {isUploading ? <Loader2 size={20} className="text-accent-blue animate-spin" /> : <Upload size={20} className="text-accent-blue" />}
+                          </div>
+                          <div className="text-center px-4">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-accent-blue">Upload Screenshot</p>
+                            <p className="text-[9px] text-muted-foreground mt-1 uppercase tracking-tighter">PNG, JPG up to 5MB</p>
+                          </div>
                         </button>
-                        <input 
-                          type="file" 
-                          ref={fileInputRef} 
-                          className="hidden" 
-                          accept="image/*" 
-                          onChange={handleFileUpload} 
-                        />
-                      </>
-                    )}
-                  </div>
-                )}
+                      )}
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={handleFileUpload} 
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* No Proof Placeholder */}
+                {(() => {
+                  const submissions = selectedMatch.details?.submissions || {};
+                  const hasAnyProof = Object.values(submissions).some((s: any) => s.screenshot_url) || screenshotUrl;
+                  if (!hasAnyProof) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-10 rounded-3xl border border-border/50 bg-muted/20 text-center space-y-3">
+                        <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center">
+                          <ImageIcon size={24} className="text-muted-foreground/40" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-muted-foreground">No evidence has been submitted yet</p>
+                          <p className="text-[10px] text-muted-foreground/60 mt-1 uppercase tracking-[0.15em]">Proof of result is required for verification</p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               <div className="flex gap-4 pt-4">

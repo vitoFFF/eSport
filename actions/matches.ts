@@ -133,7 +133,7 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
       if (!isMatch) {
         await supabase.from('matches').update({
           status: 'disputed',
-          details: { ...details, submissions }
+          details: { ...details, submissions, screenshot_url: screenshotUrl || details.screenshot_url }
         }).eq('id', matchIdStr)
         revalidatePath(`/tournaments/${match.tournament_id}`)
         return { success: true, message: 'Scores differ. Match marked as disputed for organizer review.' }
@@ -142,7 +142,7 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
     } else {
       await supabase.from('matches').update({
         status: 'submitted',
-        details: { ...details, submissions }
+        details: { ...details, submissions, screenshot_url: screenshotUrl || details.screenshot_url }
       }).eq('id', matchIdStr)
       revalidatePath(`/tournaments/${match.tournament_id}`)
       return { success: true, message: 'Score submitted. Waiting for opponent to confirm.' }
