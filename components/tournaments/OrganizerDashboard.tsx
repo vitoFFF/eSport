@@ -24,7 +24,6 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
   const [participationMode, setParticipationMode] = useState('team')
   const [bracketStructure, setBracketStructure] = useState('single_elimination')
   const [category, setCategory] = useState('esport')
-  const [seedingMethod, setSeedingMethod] = useState('random')
   const [rankingYear, setRankingYear] = useState('2026')
   const [selectedBanner, setSelectedBanner] = useState<string | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -395,17 +394,6 @@ export default function OrganizerDashboard({ profile, tournaments }: OrganizerDa
                   ]}
                 />
                 
-                <ModernSelect
-                  label="Seeding Method"
-                  name="seedingMethod"
-                  value={seedingMethod}
-                  onChange={setSeedingMethod}
-                  options={[
-                    { value: 'random', label: 'Random Shuffling', emoji: '🎲' },
-                    { value: 'manual', label: 'Manual Assignment', emoji: '✍️' },
-                    { value: 'elo', label: 'By ELO / Ranking', emoji: '📈' },
-                  ]}
-                />
 
                 <ModernSelect
                   label="Score Reporting"

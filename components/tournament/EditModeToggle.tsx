@@ -1,24 +1,29 @@
 'use client'
 
 import React, { useState } from 'react'
-import { Trophy, Dices, Edit3, Loader2, Check, X } from 'lucide-react'
-import { shuffleRegistrations } from '@/actions/matches'
+import { Trophy, Dices, Edit3, Loader2, Check, X, Rocket, Zap } from 'lucide-react'
+import { shuffleRegistrations, generateBracketMatches } from '@/actions/matches'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
 interface EditModeToggleProps {
   tournamentId: string
   isEditMode: boolean
+  status: string
 }
 
 export default function EditModeToggle({ 
   tournamentId, 
-  isEditMode
+  isEditMode,
+  status
 }: EditModeToggleProps) {
   const [isShuffling, setIsShuffling] = useState(false)
+  const [isStarting, setIsStarting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+
+  const isOngoing = status === 'ongoing' || status === 'completed'
 
   const handleToggleEdit = () => {
     const params = new URLSearchParams(searchParams.toString())
@@ -44,6 +49,27 @@ export default function EditModeToggle({
     }
   }
 
+  const handleStartTournament = async () => {
+    if (!confirm('Are you ready to KICK-OFF this tournament? This will generate the bracket and matches.')) return
+    
+    setIsStarting(true)
+    const res = await generateBracketMatches(tournamentId)
+    setIsStarting(false)
+
+    if (res.success) {
+      // Clear edit mode if active
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('edit')
+      router.push(`${pathname}?${params.toString()}`)
+      router.refresh()
+    } else {
+      alert(res.error || 'Failed to start tournament')
+    }
+  }
+
+  // If ongoing, we don't show the seeding controls anymore
+  if (isOngoing) return null
+
   return (
     <div className="space-y-4 mt-6">
       <div className="p-6 rounded-[2rem] bg-card/60 backdrop-blur-xl border border-border shadow-2xl space-y-5 relative overflow-hidden group">
@@ -62,7 +88,7 @@ export default function EditModeToggle({
         <div className="grid grid-cols-1 gap-3 relative z-10">
           <button
             onClick={handleAutoDraw}
-            disabled={isShuffling || showSuccess}
+            disabled={isShuffling || showSuccess || isStarting}
             className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-3 border shadow-sm ${
               showSuccess 
                 ? 'bg-emerald-500 border-emerald-500 text-white shadow-[0_10px_20px_rgba(16,185,129,0.3)]' 
@@ -81,6 +107,7 @@ export default function EditModeToggle({
 
           <button
             onClick={handleToggleEdit}
+            disabled={isStarting}
             className={`w-full py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] transition-all duration-500 flex items-center justify-center gap-3 border shadow-sm ${
               isEditMode 
                 ? 'bg-accent-purple border-accent-purple text-white shadow-[0_10px_20px_rgba(168,85,247,0.3)]' 
@@ -89,6 +116,21 @@ export default function EditModeToggle({
           >
             {isEditMode ? <X size={16} /> : <Edit3 size={16} />}
             {isEditMode ? 'Exit Edit Mode' : '✍️ Manual Seeding'}
+          </button>
+
+          <div className="h-px w-full bg-border/50 my-1" />
+
+          <button
+            onClick={handleStartTournament}
+            disabled={isStarting}
+            className="w-full py-5 rounded-2xl bg-gradient-to-r from-accent-blue to-accent-purple text-white font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-accent-blue/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+          >
+            {isStarting ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <Rocket size={18} className="animate-bounce" />
+            )}
+            {isStarting ? 'Kicking Off...' : '🚀 Kick-off Tournament'}
           </button>
         </div>
 

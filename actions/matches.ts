@@ -84,15 +84,11 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
   const { data: tournament } = await supabase.from('tournaments').select('organizer_id, bracket_structure, settings, third_place_match').eq('id', match.tournament_id).single()
   if (!tournament || tournament.organizer_id !== user.id) return { error: 'Not authorized' }
 
-  // 1. Define the Win Threshold
   const participantsCount = Number(tournament.settings?.stage_participants_count) || 8
   const settings = tournament.settings || {}
   const matchFormat = (settings.match_format || settings.matchFormat || 'bo1').toString().toLowerCase()
   const threshold = matchFormat.includes('5') ? 3 : matchFormat.includes('3') ? 2 : 1
   
-  console.log(`[ScoreUpdate] Match ${matchId} | Format: ${matchFormat} | Threshold: ${threshold}`)
-
-  // 2. Count Actual Wins
   let homeWins = 0;
   let awayWins = 0;
 
@@ -119,18 +115,13 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
       });
   }
 
-  // 3. Strict Completion Rule
-  // For Round Robin and Group Stage, a match can be completed even if no one reaches the threshold (a draw)
   const isLeagueFormat = ['round_robin', 'group_stage'].includes(tournament.bracket_structure);
   const isCompleted = isWalkover || homeWins >= threshold || awayWins >= threshold || (isLeagueFormat && games.length >= (threshold * 2 - 1));
   
-  console.log(`[ScoreUpdate] Home Wins: ${homeWins} | Away Wins: ${awayWins} | Completed: ${isCompleted}`)
-
   if (isCompleted && !isWalkover && homeWins === awayWins && !isLeagueFormat) {
       return { error: 'Elimination matches cannot end in a draw.' }
   }
 
-  // Determine winner IDs based on score
   let winnerTeamId = null
   let winnerPlayerId = null
 
@@ -144,17 +135,12 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
       }
   }
 
-  // Calculate final scores to display
-  // For League formats, we often want to show the total points/goals (especially in BO1)
   let finalHomeScore = homeWins;
   let finalAwayScore = awayWins;
 
-  if (isLeagueFormat) {
-      // If it's a BO1, use the actual scores from the first game
-      if (threshold === 1 && games[0]) {
-          finalHomeScore = games[0].home_score;
-          finalAwayScore = games[0].away_score;
-      }
+  if (isLeagueFormat && threshold === 1 && games[0]) {
+      finalHomeScore = games[0].home_score;
+      finalAwayScore = games[0].away_score;
   }
 
   const { error } = await supabase
@@ -171,14 +157,12 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
 
   if (error) return { error: error.message }
 
-  // 4. Bracket Update (Progression Logic)
   if (isCompleted && (winnerTeamId || winnerPlayerId)) {
     const isDoubleElim = tournament.bracket_structure === 'double_elimination'
     const isSingleElim = tournament.bracket_structure === 'single_elimination' || tournament.bracket_structure === 'hybrid'
     const isElimination = isDoubleElim || isSingleElim;
 
     if (isElimination) {
-      // Advance Winner
       let nextRound = match.bracket_round + 1
       let nextMatchOrder = Math.floor(match.match_order / 2)
       let isHomeInNext = match.match_order % 2 === 0
@@ -224,7 +208,6 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
           }
       }
 
-      // Handle Loser (Double/Single Elimination)
       const loserTeamId = winnerTeamId === match.home_team_id ? match.away_team_id : match.home_team_id
       const loserPlayerId = winnerPlayerId === match.home_player_id ? match.away_player_id : match.home_player_id
       
@@ -242,7 +225,6 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
             isHomeInLb = false 
           }
 
-          // Cross-over
           if (lbTargetRound > 10 && lbTargetRound % 2 !== 0) {
               const matchesInLbRound = Math.pow(2, Math.ceil(Math.log2(participantsCount)) - Math.floor((lbTargetRound - 10) / 2) - 2);
               lbTargetMatch = (matchesInLbRound - 1) - lbTargetMatch;
@@ -260,10 +242,9 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
           }
         }
 
-        // Third-place match routing
         if (isSingleElim && tournament.third_place_match) {
            const wbRounds = Math.ceil(Math.log2(participantsCount));
-           if (match.bracket_round === wbRounds - 2) { // Semi-finals
+           if (match.bracket_round === wbRounds - 2) { 
               const { data: thirdMatch } = await supabase.from('matches').select('id').eq('tournament_id', match.tournament_id).eq('bracket_round', 99).maybeSingle();
               if (thirdMatch) {
                  const tpPayload: any = {}
@@ -278,7 +259,6 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
         }
       }
 
-      // GF Reset logic
       if (isDoubleElim && match.bracket_round === 20) {
           if (winnerTeamId === match.away_team_id || winnerPlayerId === match.away_player_id) {
               const { data: resetMatch } = await supabase.from('matches').select('id').eq('tournament_id', match.tournament_id).eq('bracket_round', 21).maybeSingle();
@@ -313,13 +293,21 @@ export async function generateBracketMatches(tournamentId: string) {
   if (!registrationsData || registrationsData.length < 2) return { error: 'Not enough registrations to generate a bracket (min 2)' }
 
   let registrations = [...registrationsData]
-  if (tournament.seeding_method === 'random') {
+  const hasSeeding = registrations.some(r => r.details?.group_index !== undefined || r.details?.seed_index !== undefined)
+  
+  if (!hasSeeding) {
+    // Default to random shuffle if no manual/auto seeding was done before kick-off
     for (let i = registrations.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [registrations[i], registrations[j]] = [registrations[j], registrations[i]];
     }
   } else {
-    registrations.sort((a, b) => (a.details?.seed_index || 0) - (b.details?.seed_index || 0));
+    // Respect the seeding order assigned via Auto Draw or Manual Seeding
+    registrations.sort((a, b) => {
+        const aVal = a.details?.group_index ?? a.details?.seed_index ?? 0
+        const bVal = b.details?.group_index ?? b.details?.seed_index ?? 0
+        return aVal - bVal
+    })
   }
 
   await supabase.from('matches').delete().eq('tournament_id', tournamentId)
@@ -336,7 +324,7 @@ export async function generateBracketMatches(tournamentId: string) {
     const bracketParticipants = new Array(powerOfTwo).fill(undefined)
     for (let i = 0; i < byes; i++) {
         bracketParticipants[i * 2] = registrations[i]
-        bracketParticipants[i * 2 + 1] = null // null means BYE
+        bracketParticipants[i * 2 + 1] = null 
     }
     let regIndex = byes;
     for (let i = 0; i < powerOfTwo; i++) {
@@ -405,8 +393,6 @@ export async function generateBracketMatches(tournamentId: string) {
       : 1;
       
     const groups: any[][] = Array.from({length: groupCount}, () => []);
-    
-    // Check if any registrations have manual group assignments
     const hasManualGroups = registrations.some(r => r.details?.group_index !== undefined && r.details?.group_index !== null);
 
     if (hasManualGroups) {
@@ -416,7 +402,6 @@ export async function generateBracketMatches(tournamentId: string) {
             groups[targetGroup].push(reg);
         });
     } else {
-        // Snake seeding distribution
         for (let i = 0; i < registrations.length; i++) {
             const roundTrip = Math.floor(i / groupCount);
             const direction = roundTrip % 2 === 0 ? 1 : -1;
@@ -425,15 +410,7 @@ export async function generateBracketMatches(tournamentId: string) {
         }
     }
 
-    const structuredGroups: any[] = [];
-
     groups.forEach((groupRegs, gIndex) => {
-        const groupObj: any = {
-            group_index: gIndex,
-            group_name: `Group ${String.fromCharCode(65 + gIndex)}`,
-            rounds: []
-        };
-
         const isHomeAway = tournament.settings?.match_format === 'home_away';
         const numCycles = isHomeAway ? 2 : 1;
         const players = [...groupRegs];
@@ -447,17 +424,11 @@ export async function generateBracketMatches(tournamentId: string) {
         for (let cycle = 0; cycle < numCycles; cycle++) {
             const currentPlayers = [...players];
             for (let r = 0; r < roundsPerCycle; r++) {
-                const roundIdxInCycle = r;
                 const absoluteRoundIdx = (cycle * roundsPerCycle) + r;
-
                 for (let i = 0; i < matchesPerRound; i++) {
                     let home = currentPlayers[i];
                     let away = currentPlayers[n - 1 - i];
-
-                    // Swap home/away for second cycle
-                    if (cycle === 1) {
-                        [home, away] = [away, home];
-                    }
+                    if (cycle === 1) [home, away] = [away, home];
                     
                     const matchData: any = {
                         tournament_id: tournamentId,
@@ -485,17 +456,12 @@ export async function generateBracketMatches(tournamentId: string) {
                             matchData.away_score = away ? 1 : 0;
                         }
                     }
-
                     matchesToInsert.push(matchData);
                 }
-                // Circle rotation
                 currentPlayers.splice(1, 0, currentPlayers.pop() as any);
             }
         }
     });
-
-    // Attach structured groups to the final return if needed
-    (tournament as any).generated_structure = structuredGroups;
 
     if (structure === 'hybrid') {
         const promotionCount = parseInt(tournament.settings?.promotion_count || '2');
@@ -553,7 +519,6 @@ export async function generateBracketMatches(tournamentId: string) {
 
   await supabase.from('tournaments').update({ status: 'ongoing' }).eq('id', tournamentId)
 
-  // Auto progress walkovers
   const { data: insertedMatches } = await supabase.from('matches').select('*').eq('tournament_id', tournamentId).eq('status', 'confirmed');
   if (insertedMatches) {
       for (const m of insertedMatches) {
@@ -564,12 +529,8 @@ export async function generateBracketMatches(tournamentId: string) {
   }
 
   revalidatePath(`/tournaments/${tournamentId}`)
-  return { 
-    success: true, 
-    groups: (tournament as any).generated_structure 
-  }
+  return { success: true }
 }
-
 
 export async function generateNextSwissRound(tournamentId: string) {
   const supabase = await createClient()
@@ -580,7 +541,6 @@ export async function generateNextSwissRound(tournamentId: string) {
   if (!tournament || tournament.organizer_id !== user.id) return { error: 'Not authorized' }
 
   const { data: matches } = await supabase.from('matches').select('*').eq('tournament_id', tournamentId)
-  
   if (!matches) return { error: 'No matches found' }
 
   const pending = matches.filter(m => m.status !== 'confirmed')
@@ -588,9 +548,8 @@ export async function generateNextSwissRound(tournamentId: string) {
 
   const currentRound = Math.max(...matches.map(m => m.bracket_round))
   
-  // Build stats
   const { data: registrations } = await supabase.from('tournament_registrations').select('*').eq('tournament_id', tournamentId)
-  if (!registrations) return { error: 'No registrations found' }
+  if (!registrations) return { error: `No registrations found for tournament ${tournamentId}` }
 
   const stats = registrations.reduce((acc, r) => {
       const id = r.team_id || r.player_id;
@@ -614,11 +573,9 @@ export async function generateNextSwissRound(tournamentId: string) {
 
   const players: any[] = Object.values(stats).sort((a: any, b: any) => b.points - a.points);
   const nextRoundMatches: any[] = []
-  
   let matchOrder = 0;
   
   if (players.length % 2 !== 0) {
-      // Find lowest points player who hasn't had a bye
       let byePlayerIdx = -1;
       for (let i = players.length - 1; i >= 0; i--) {
           if (!players[i].hadBye) {
@@ -643,13 +600,11 @@ export async function generateNextSwissRound(tournamentId: string) {
       }
   }
 
-  // Simple pairing logic avoiding rematches
   const paired = new Set<string>();
   for (let i = 0; i < players.length; i++) {
       if (paired.has(players[i].id)) continue;
       const p1 = players[i];
       let pairedIdx = -1;
-      
       for (let j = i + 1; j < players.length; j++) {
           if (paired.has(players[j].id)) continue;
           if (!p1.opponents.has(players[j].id)) {
@@ -657,8 +612,6 @@ export async function generateNextSwissRound(tournamentId: string) {
               break;
           }
       }
-      
-      // Fallback if everyone played everyone (rare in proper swiss, but just in case pair with next)
       if (pairedIdx === -1) {
           for (let j = i + 1; j < players.length; j++) {
               if (!paired.has(players[j].id)) {
@@ -667,7 +620,6 @@ export async function generateNextSwissRound(tournamentId: string) {
               }
           }
       }
-      
       if (pairedIdx !== -1) {
           const p2 = players[pairedIdx];
           paired.add(p1.id);
@@ -698,17 +650,31 @@ export async function updateRegistrationGroups(tournamentId: string, assignments
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: tournament } = await supabase.from('tournaments').select('organizer_id').eq('id', tournamentId).single()
-  if (!tournament || tournament.organizer_id !== user.id) return { error: 'Not authorized' }
+  console.log(`[UpdateGroups] Tournament: ${tournamentId} | Assignments: ${assignments.length}`)
+
+  const { data: tournament, error: tError } = await supabase.from('tournaments').select('organizer_id').eq('id', tournamentId).single()
+  if (tError || !tournament) return { error: `Tournament check failed: ${tError?.message || 'Not found'}` }
+  if (tournament.organizer_id !== user.id) return { error: 'Not authorized: You are not the organizer' }
 
   for (const item of assignments) {
-      const { data: reg } = await supabase.from('tournament_registrations').select('details').eq('id', item.id).single()
+      const { data: reg, error: fError } = await supabase.from('tournament_registrations').select('details').eq('id', item.id).single()
+      if (fError) {
+          console.error(`[UpdateGroups] Fetch error for reg ${item.id}:`, fError)
+          continue
+      }
+      
       const details = reg?.details || {}
-      await supabase.from('tournament_registrations').update({
+      const { error: uError } = await supabase.from('tournament_registrations').update({
           details: { ...details, group_index: item.groupIndex }
       }).eq('id', item.id)
+
+      if (uError) {
+          console.error(`[UpdateGroups] Update error for reg ${item.id}:`, uError)
+          return { error: `Failed to update registration ${item.id}: ${uError.message}` }
+      }
   }
 
+  console.log(`[UpdateGroups] Success for tournament ${tournamentId}`)
   revalidatePath(`/tournaments/${tournamentId}`)
   return { success: true }
 }
@@ -718,13 +684,31 @@ export async function shuffleRegistrations(tournamentId: string, groupCount: num
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { data: tournament } = await supabase.from('tournaments').select('organizer_id').eq('id', tournamentId).single()
-  if (!tournament || tournament.organizer_id !== user.id) return { error: 'Not authorized' }
+  console.log(`[Shuffle] Tournament: ${tournamentId}`)
 
-  const { data: registrations } = await supabase.from('tournament_registrations').select('id, details').eq('tournament_id', tournamentId)
-  if (!registrations) return { error: 'No registrations found' }
+  const { data: tournament, error: tError } = await supabase.from('tournaments').select('organizer_id').eq('id', tournamentId).single()
+  if (tError || !tournament) return { error: `Tournament fetch failed: ${tError?.message || 'Not found'}` }
+  if (tournament.organizer_id !== user.id) return { error: 'Not authorized: You are not the organizer' }
 
-  const shuffled = [...registrations]
+  const { data: registrations, error: regError } = await supabase
+    .from('tournament_registrations')
+    .select('id, details, status')
+    .eq('tournament_id', tournamentId)
+
+  if (regError) return { error: `Database error: ${regError.message}` }
+  if (!registrations || registrations.length === 0) {
+    return { error: `No registrations found for tournament ID: ${tournamentId}. Total found: 0` }
+  }
+
+  const confirmedRegs = registrations.filter(r => r.status === 'registered')
+  if (confirmedRegs.length === 0) {
+    const statuses = Array.from(new Set(registrations.map(r => r.status))).join(', ')
+    return { error: `Found ${registrations.length} registrations, but none have "registered" status. (Statuses found: ${statuses})` }
+  }
+
+  console.log(`[Shuffle] Shuffling ${confirmedRegs.length} competitors...`)
+
+  const shuffled = [...confirmedRegs]
   for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -733,11 +717,17 @@ export async function shuffleRegistrations(tournamentId: string, groupCount: num
   for (let i = 0; i < shuffled.length; i++) {
       const groupIndex = i % groupCount
       const details = shuffled[i].details || {}
-      await supabase.from('tournament_registrations').update({
+      const { error: uError } = await supabase.from('tournament_registrations').update({
           details: { ...details, group_index: groupIndex }
       }).eq('id', shuffled[i].id)
+      
+      if (uError) {
+          console.error(`[Shuffle] Update error for reg ${shuffled[i].id}:`, uError)
+          return { error: `Failed to update registration ${shuffled[i].id}: ${uError.message}` }
+      }
   }
 
+  console.log(`[Shuffle] Success for tournament ${tournamentId}`)
   revalidatePath(`/tournaments/${tournamentId}`)
   return { success: true }
 }

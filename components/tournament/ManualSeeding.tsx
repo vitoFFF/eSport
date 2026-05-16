@@ -37,9 +37,10 @@ export default function ManualSeeding({ registrations, tournamentId, isEditMode 
     setIsSaving(false)
     
     if (res.success) {
+      alert('✅ Seeding updated successfully! The groups are now saved.')
       router.refresh()
     } else {
-      alert(res.error || 'Failed to save groups')
+      alert('❌ ' + (res.error || 'Failed to save groups'))
     }
   }
 

@@ -167,7 +167,6 @@ export async function createTournament(formData: FormData) {
   const bracketStructure = formData.get('bracketStructure') as string || 'single_elimination'
   const matchFormat = formData.get('matchFormat') as string || 'bo1'
   const finalMatchFormat = formData.get('finalMatchFormat') as string || matchFormat
-  const seedingMethod = formData.get('seedingMethod') as string || 'random'
   const scoreReportingMethod = formData.get('scoreReportingMethod') as string || 'admins_only'
   const tieBreakerRule = formData.get('tieBreakerRule') as string
   const thirdPlaceMatch = formData.get('thirdPlaceMatch') === 'true'
@@ -204,7 +203,7 @@ export async function createTournament(formData: FormData) {
       bracket_structure: bracketStructure,
       match_format: matchFormat,
       final_match_format: finalMatchFormat,
-      seeding_method: seedingMethod,
+      seeding_method: 'random',
       score_reporting_method: scoreReportingMethod,
       tie_breaker_rule: tieBreakerRule,
       third_place_match: thirdPlaceMatch,

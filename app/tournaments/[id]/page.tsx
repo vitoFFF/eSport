@@ -243,7 +243,7 @@ export default async function TournamentDetailsPage({
 
                     {/* Action Buttons for Organizer */}
                     {(matches || []).length === 0 && (
-                      <EditModeToggle tournamentId={tournament.id} isEditMode={isEditMode} />
+                      <EditModeToggle tournamentId={tournament.id} isEditMode={isEditMode} status={tournament.status} />
                     )}
                   </>
                 ) : isRegistered ? (
