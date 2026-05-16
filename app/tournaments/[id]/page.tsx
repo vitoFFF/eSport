@@ -288,6 +288,7 @@ export default async function TournamentDetailsPage({
                   tournamentId={tournament.id}
                   bracketStructure={tournament.bracket_structure}
                   matchFormat={tournament.settings?.match_format || 'bo1'}
+                  currentUserId={user?.id}
                 />
               </div>
             </div>

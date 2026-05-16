@@ -31,6 +31,7 @@ interface BracketViewProps {
   tournamentId?: string
   bracketStructure?: string
   matchFormat?: string
+  currentUserId?: string
 }
 
 const getRoundName = (roundIdx: number, totalRounds: number) => {
@@ -48,7 +49,8 @@ export default function BracketView({
   isOrganizer = false,
   tournamentId,
   bracketStructure = 'single_elimination',
-  matchFormat = 'bo1'
+  matchFormat = 'bo1',
+  currentUserId
 }: BracketViewProps) {
   const [selectedMatch, setSelectedMatch] = useState<any | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -248,6 +250,7 @@ export default function BracketView({
     )
 
     if (result.success) {
+      if (result.message) alert(result.message)
       setSelectedMatch(null)
     } else {
       alert(result.error || 'Failed to update score')
@@ -302,17 +305,20 @@ export default function BracketView({
     const isLive = match.status === 'in_progress'
     const isDraw = isConfirmed && match.home_score === match.away_score && match.home_score !== null
 
+    const isPlayerInMatch = currentUserId && (match.home_player_id === currentUserId || match.away_player_id === currentUserId || match.home_team_id === currentUserId || match.away_team_id === currentUserId)
+    const canEdit = (isOrganizer || isPlayerInMatch) && !isSkeleton && !isConfirmed
+
     return (
       <div key={match.id} className="relative group" style={{ height: CARD_HEIGHT }}>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: (roundIdx * 0.1) + (matchIdx * 0.05) }}
-          onClick={() => isOrganizer && !isSkeleton && handleEditClick(match)}
+          onClick={() => canEdit && handleEditClick(match)}
           className={`relative z-10 w-full h-full rounded-[2.5rem] border transition-all duration-700 overflow-hidden flex flex-col group/card ${
             isLive ? 'border-accent-blue/30 bg-accent-blue/5 shadow-[0_30px_60px_-12px_rgba(37,99,235,0.15)]' : 
             'border-white/40 border-t-white/80 bg-white/60 backdrop-blur-3xl shadow-[0_30px_60px_-12px_rgba(0,0,0,0.12)] hover:border-white/60 hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.18)]'
-          } ${isSkeleton ? 'opacity-30 grayscale' : ''} ${isOrganizer && !isSkeleton ? 'cursor-pointer hover:-translate-y-2' : ''}`}
+          } ${isSkeleton ? 'opacity-30 grayscale' : ''} ${canEdit ? 'cursor-pointer hover:-translate-y-2' : ''}`}
         >
           {/* Subtle Rim Light Glow */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/60 to-transparent pointer-events-none opacity-50" />
@@ -326,9 +332,21 @@ export default function BracketView({
                 <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Live</span>
               </div>
             )}
+            {match.status === 'submitted' && (
+              <div className="flex items-center gap-2 bg-amber-500 px-3 py-1 rounded-full shadow-[0_4px_12px_rgba(245,158,11,0.2)]">
+                <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Pending Verification</span>
+              </div>
+            )}
+            {match.status === 'disputed' && (
+              <div className="flex items-center gap-2 bg-red-500 px-3 py-1 rounded-full shadow-[0_4px_12px_rgba(239,68,68,0.2)]">
+                <div className="h-1.5 w-1.5 rounded-full bg-white animate-bounce" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Disputed</span>
+              </div>
+            )}
           </div>
 
-          {isOrganizer && !isSkeleton && (
+          {canEdit && (
             <div className="absolute top-3 right-3 p-2 rounded-xl bg-accent-blue/10 opacity-0 group-hover/card:opacity-100 transition-all transform hover:scale-110">
               <Edit3 size={14} className="text-accent-blue" />
             </div>

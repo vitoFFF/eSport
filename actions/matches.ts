@@ -77,12 +77,56 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) return { error: 'Not authenticated' }
+  const matchIdStr = matchId.toString()
 
-  const { data: match } = await supabase.from('matches').select('*').eq('id', matchId).single()
+  const { data: match } = await supabase.from('matches').select('*').eq('id', matchIdStr).single()
   if (!match) return { error: 'Match not found' }
 
   const { data: tournament } = await supabase.from('tournaments').select('organizer_id, bracket_structure, settings, third_place_match').eq('id', match.tournament_id).single()
-  if (!tournament || tournament.organizer_id !== user.id) return { error: 'Not authorized' }
+  if (!tournament) return { error: 'Tournament not found' }
+
+  const isOrganizer = tournament.organizer_id === user.id
+  const isHomePlayer = match.home_player_id === user.id || match.home_team_id === user.id
+  const isAwayPlayer = match.away_player_id === user.id || match.away_team_id === user.id
+
+  if (!isOrganizer && !isHomePlayer && !isAwayPlayer) {
+    return { error: 'Not authorized: You are not part of this match or the organizer' }
+  }
+
+  // Player Reporting Verification Logic
+  if (!isOrganizer) {
+    const details = match.details || {}
+    const submissions = details.submissions || {}
+    
+    submissions[user.id] = { games, isWalkover, walkoverWinner }
+    
+    const otherPlayerId = isHomePlayer 
+      ? (match.away_player_id || match.away_team_id)
+      : (match.home_player_id || match.home_team_id)
+      
+    const otherSubmission = submissions[otherPlayerId]
+
+    if (otherSubmission) {
+      const matchGames = JSON.stringify(otherSubmission.games) === JSON.stringify(games)
+      const matchWalkover = otherSubmission.isWalkover === isWalkover
+      const matchWinner = otherSubmission.walkoverWinner === walkoverWinner
+
+      if (!matchGames || !matchWalkover || !matchWinner) {
+        await supabase.from('matches').update({
+          status: 'disputed',
+          details: { ...details, submissions }
+        }).eq('id', matchIdStr)
+        return { success: true, message: 'Scores differ. Match marked as disputed.' }
+      }
+      // If matched, continue to finalize below
+    } else {
+      await supabase.from('matches').update({
+        status: 'submitted',
+        details: { ...details, submissions }
+      }).eq('id', matchIdStr)
+      return { success: true, message: 'Score submitted. Waiting for opponent.' }
+    }
+  }
 
   const participantsCount = Number(tournament.settings?.stage_participants_count) || 8
   const settings = tournament.settings || {}
@@ -143,6 +187,19 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
       finalAwayScore = games[0].away_score;
   }
 
+  const finalDetails = { 
+    ...(match.details || {}), 
+    is_walkover: isWalkover, 
+    games: games
+  }
+  
+  // If this was a matched player submission, ensure we keep the updated submissions list
+  if (!isOrganizer) {
+    const submissions = { ...(match.details?.submissions || {}) }
+    submissions[user.id] = { games, isWalkover, walkoverWinner }
+    finalDetails.submissions = submissions
+  }
+
   const { error } = await supabase
     .from('matches')
     .update({
@@ -151,9 +208,9 @@ export async function updateMatchScore(matchId: string, games: GameData[], isWal
       winner_team_id: winnerTeamId,
       winner_player_id: winnerPlayerId,
       status: isCompleted ? 'confirmed' : 'in_progress',
-      details: { ...match.details, is_walkover: isWalkover, games: games }
+      details: finalDetails
     })
-    .eq('id', matchId)
+    .eq('id', matchIdStr)
 
   if (error) return { error: error.message }
 
