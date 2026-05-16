@@ -272,25 +272,27 @@ export default async function TournamentDetailsPage({
         </div>
 
         {/* Full-Width Bracket Arena */}
-        <div className="space-y-8 my-20">
-          <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-6">
-            <Trophy size={20} className="text-accent-blue" /> Tournament Bracket Arena
-          </h3>
-          <div className="p-10 rounded-[3rem] border border-border/50 bg-card/30 backdrop-blur-xl shadow-2xl overflow-hidden relative group">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/5 via-transparent to-accent-purple/5 opacity-30" />
-            <div className="relative z-10">
-              <BracketView
-                matches={matches || []}
-                registrations={registrations || []}
-                totalParticipants={tournament.settings?.stage_participants_count || 8}
-                isOrganizer={user?.id === tournament.organizer_id}
-                tournamentId={tournament.id}
-                bracketStructure={tournament.bracket_structure}
-                matchFormat={tournament.settings?.match_format || 'bo1'}
-              />
+        {(tournament.status === 'ongoing' || tournament.status === 'completed') && (
+          <div className="space-y-8 my-20">
+            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-6">
+              <Trophy size={20} className="text-accent-blue" /> Tournament Bracket Arena
+            </h3>
+            <div className="p-10 rounded-[3rem] border border-border/50 bg-card/30 backdrop-blur-xl shadow-2xl overflow-hidden relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/5 via-transparent to-accent-purple/5 opacity-30" />
+              <div className="relative z-10">
+                <BracketView
+                  matches={matches || []}
+                  registrations={registrations || []}
+                  totalParticipants={tournament.settings?.stage_participants_count || 8}
+                  isOrganizer={user?.id === tournament.organizer_id}
+                  tournamentId={tournament.id}
+                  bracketStructure={tournament.bracket_structure}
+                  matchFormat={tournament.settings?.match_format || 'bo1'}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
       </div>
     </div>
