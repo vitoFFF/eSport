@@ -5,6 +5,7 @@ import { updateProfile, respondToInvite, leaveTeam } from '@/actions/profile'
 import { User, Gamepad2, Save, CheckCircle2, AlertCircle, Trophy, Users, Star, Swords, Calendar, ChevronRight, Target, Zap, Rocket, BadgeCheck, LayoutDashboard, Lock } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLanguage } from '@/lib/LanguageContext'
+import Link from 'next/link'
 
 interface PlayerProfileProps {
   profile: any
@@ -15,6 +16,7 @@ interface PlayerProfileProps {
     wins: number
     mvpAwards: number
   }
+  registeredTournaments?: any[]
 }
 
 const AVAILABLE_GAMES = [
@@ -68,7 +70,7 @@ const LEADERBOARD_PLAYERS = [
   { rank: 1242, name: 'You', points: 1842, winRate: '68%', avatar: null, trend: 'up', isCurrent: true },
 ]
 
-export default function PlayerProfile({ profile, playerTeams = [], teamInvites = [], stats }: PlayerProfileProps) {
+export default function PlayerProfile({ profile, playerTeams = [], teamInvites = [], stats, registeredTournaments = [] }: PlayerProfileProps) {
   const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState<'achievements' | 'activity' | 'rosters'>('achievements')
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -135,43 +137,61 @@ export default function PlayerProfile({ profile, playerTeams = [], teamInvites =
           </div>
         </div>
 
-        {/* Recent Battles */}
+        {/* My Tournaments */}
         <div className="xl:col-span-5 space-y-6 flex flex-col">
           <div className="flex items-center justify-between px-4">
             <h3 className="text-xl font-black flex items-center gap-4 uppercase tracking-tight">
-              <Swords size={26} className="text-red-500" />
-              Recent Battles
+              <Trophy size={26} className="text-accent-blue" />
+              {t("dashboard.myTournaments")}
             </h3>
-            <button className="text-[10px] font-black uppercase tracking-widest text-accent-blue hover:underline">View All</button>
+            <Link href="/tournaments" className="text-[10px] font-black uppercase tracking-widest text-accent-blue hover:underline">
+              {t("common.viewAll")}
+            </Link>
           </div>
-          <div className="space-y-4 flex-grow relative">
-            <ComingSoonOverlay message="Battle History Coming Soon" />
-            {MOCK_MATCHES.map((match, idx) => (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.1 }}
-                key={match.id}
-                className="p-7 dash-card transition-all group hover:scale-[1.01] h-[calc(33.33%-1rem)] flex flex-col justify-center"
-              >
-                <div className="flex items-center justify-between gap-8">
-                  <div className="flex items-center gap-8">
-                    <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-black text-lg shadow-inner ${match.result === 'WIN' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'
-                      }`}>
-                      {match.result === 'WIN' ? 'W' : 'L'}
+          <div className="space-y-4 flex-grow relative overflow-y-auto max-h-[500px] no-scrollbar">
+            {registeredTournaments.length > 0 ? (
+              registeredTournaments.map((tournament, idx) => (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  key={tournament.id}
+                  className="p-7 dash-card transition-all group hover:scale-[1.01] flex flex-col justify-center"
+                >
+                  <Link href={`/tournaments/${tournament.id}`}>
+                    <div className="flex items-center justify-between gap-8">
+                      <div className="flex items-center gap-8">
+                        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center font-black text-lg shadow-inner ${
+                          tournament.status === 'ongoing' || tournament.status === 'open' 
+                            ? 'bg-accent-blue/10 text-accent-blue' 
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {tournament.status === 'ongoing' || tournament.status === 'open' ? <Zap size={24} /> : <CheckCircle2 size={24} />}
+                        </div>
+                        <div>
+                          <p className="font-black text-lg tracking-tight group-hover:text-accent-blue transition-colors truncate max-w-[200px]">
+                            {tournament.name}
+                          </p>
+                          <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">
+                            {tournament.status === 'ongoing' || tournament.status === 'open' 
+                              ? t("dashboard.ongoing") 
+                              : t("dashboard.completed")}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <ChevronRight size={20} className="text-muted-foreground group-hover:text-accent-blue transition-colors" />
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-black text-lg tracking-tight group-hover:text-accent-blue transition-colors truncate max-w-[200px]">{match.tournament}</p>
-                      <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-[0.2em] mt-1">vs {match.opponent}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-black tracking-tighter">{match.score}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{match.date}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                  </Link>
+                </motion.div>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-center opacity-50 h-full">
+                 <Trophy size={48} className="mb-4 text-muted-foreground" />
+                 <p className="text-sm font-bold uppercase tracking-widest">{t("dashboard.noTournaments")}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -139,6 +139,27 @@ export default async function ProfilePage({ searchParams }: { searchParams: { ta
     organizerTournaments = tournamentData || [];
   }
 
+  // Fetch registered tournaments for player
+  let registeredTournaments: any[] = [];
+  if (profile.role === "player") {
+    const teamIds = playerTeams.map((t: any) => t.id);
+    let registrationQuery = supabase
+      .from("tournament_registrations")
+      .select("*, tournaments(*)")
+      .order('created_at', { ascending: false, referencedTable: 'tournaments' });
+
+    if (teamIds.length > 0) {
+      registrationQuery = registrationQuery.or(`player_id.eq.${user.id},team_id.in.(${teamIds.map(id => `"${id}"`).join(',')})`);
+    } else {
+      registrationQuery = registrationQuery.eq("player_id", user.id);
+    }
+
+    const { data: registrations } = await registrationQuery;
+    if (registrations) {
+      registeredTournaments = registrations.map(r => r.tournaments).filter(Boolean);
+    }
+  }
+
   // Always fetch tournaments so sport-specific views can display them
   const { data: allTournamentsData } = await supabase
     .from("tournaments")
@@ -183,7 +204,15 @@ export default async function ProfilePage({ searchParams }: { searchParams: { ta
     <DashboardShell profile={profile} headerRight={headerRight} tournaments={allTournaments} teams={teams} currentTab={tab}>
       {tab === 'overview' && (
         <>
-          {profile.role === "player" && <PlayerProfile profile={profile} playerTeams={playerTeams} teamInvites={teamInvites} stats={playerStats} />}
+          {profile.role === "player" && (
+            <PlayerProfile 
+              profile={profile} 
+              playerTeams={playerTeams} 
+              teamInvites={teamInvites} 
+              stats={playerStats} 
+              registeredTournaments={registeredTournaments} 
+            />
+          )}
           {profile.role === "manager" && <OrganizationManager profile={profile} organization={organization} teams={teams} />}
           {profile.role === "organizer" && <OrganizerDashboard profile={profile} tournaments={organizerTournaments} />}
         </>

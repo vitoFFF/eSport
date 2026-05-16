@@ -21,6 +21,10 @@
     "mvp": "MVP",
     "tournamentArena": "Tournament Arena",
     "arenaDescription": "Discover upcoming events and register your teams to compete for glory.",
+    "myTournaments": "Ongoing and Completed Tournaments",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "noTournaments": "No tournaments found",
     "sports": {
       "liveSeason": "Live Season",
       "activeTournaments": "Active Tournaments",
@@ -154,27 +158,27 @@
         "iq": "IQ",
         "clutch": "Clutch"
       }
-    },
-    "auth": {
-      "signIn": "Sign in to Matchpoint",
-      "signUp": "Create your account",
-      "signInDesc": "Your account opens on your profile page after login.",
-      "signUpDesc": "Register and then sign in with your new account.",
-      "tabSignIn": "Sign In",
-      "tabSignUp": "Sign Up",
-      "accountType": "Account Type",
-      "player": "Player",
-      "manager": "Manager",
-      "organizer": "Organizer",
-      "fullName": "Full Name",
-      "teamName": "Team Name",
-      "companyName": "Company Name",
-      "username": "Username",
-      "email": "Email Address",
-      "password": "Password",
-      "processing": "Processing...",
-      "createAccount": "Create Account",
-      "regSuccess": "Registration successful. Please sign in."
     }
+  },
+  "auth": {
+    "signIn": "Sign in to Matchpoint",
+    "signUp": "Create your account",
+    "signInDesc": "Your account opens on your profile page after login.",
+    "signUpDesc": "Register and then sign in with your new account.",
+    "tabSignIn": "Sign In",
+    "tabSignUp": "Sign Up",
+    "accountType": "Account Type",
+    "player": "Player",
+    "manager": "Manager",
+    "organizer": "Organizer",
+    "fullName": "Full Name",
+    "teamName": "Team Name",
+    "companyName": "Company Name",
+    "username": "Username",
+    "email": "Email Address",
+    "password": "Password",
+    "processing": "Processing...",
+    "createAccount": "Create Account",
+    "regSuccess": "Registration successful. Please sign in."
   }
 }
