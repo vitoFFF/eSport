@@ -27,10 +27,10 @@ export default function ProfileSidebar({ profile, activeSport = 'overview', onSp
   const currentTab = searchParams.get('tab') || 'overview'
 
   const sportNav = [
-    { id: 'football', name: 'Football', emoji: '⚽' },
-    { id: 'tennis',   name: 'Tennis',   emoji: '🎾' },
-    { id: 'padel',    name: 'Padel',    emoji: '🏸' },
-    { id: 'esport',   name: 'eSport',   emoji: '🎮' },
+    { id: 'football', name: 'FOOTBALL', emoji: '⚽' },
+    { id: 'tennis',   name: 'TENNIS',   emoji: '🎾' },
+    { id: 'padel',    name: 'PADEL',    emoji: '🏸' },
+    { id: 'esport',   name: 'ESPORT',   emoji: '🎮' },
   ]
 
   const dashboardNav = [
