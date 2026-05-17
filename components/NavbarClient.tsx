@@ -73,7 +73,7 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
                 <span className="opacity-80 transition-all duration-300 group-hover:opacity-100 group-hover:text-inherit">
                   {link.icon}
                 </span>
-                <span className="tracking-wide">{link.name}</span>
+                <span className="tracking-wide uppercase">{link.name}</span>
               </span>
             </Link>
           ))}
@@ -181,7 +181,7 @@ const NavbarClient = ({ isAuthenticated, role, username }: NavbarClientProps) =>
                   <span className={`flex h-10 w-10 items-center justify-center rounded-xl bg-muted transition-colors duration-300 group-hover:bg-opacity-20 dark:bg-card dark:group-hover:bg-white/10 group-hover:text-inherit`}>
                     {link.icon}
                   </span>
-                  <span className="tracking-wide">{link.name}</span>
+                  <span className="tracking-wide uppercase">{link.name}</span>
                 </Link>
               ))}
               {isAuthenticated && (
