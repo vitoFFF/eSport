@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { User, Save, CheckCircle2, AlertCircle, Gamepad2, Camera, Loader2 } from 'lucide-react'
+import { User, Save, CheckCircle2, AlertCircle, Gamepad2, Camera, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { updateProfile } from '@/actions/profile'
 import { createClient } from '@/utils/supabase/client'
 import { useRef } from 'react'
@@ -22,6 +22,7 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
   const [selectedGames, setSelectedGames] = useState<string[]>(profile?.games || [])
   const [currentAvatarUrl, setCurrentAvatarUrl] = useState(profile?.avatar_url || null)
   const [isUploading, setIsUploading] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const toggleGame = (game: string) => {
@@ -124,6 +125,21 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
         <div className="text-left">
           <h3 className="text-3xl font-black tracking-tight">{profile.full_name}</h3>
           <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-1">@{profile.username} • Account Config</p>
+          {selectedGames.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mt-3 animate-in fade-in duration-300">
+              {selectedGames.map((game) => (
+                <span
+                  key={game}
+                  className="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest bg-accent-blue/10 text-accent-blue border border-accent-blue/20 flex items-center gap-1.5 shadow-sm hover:scale-[1.03] transition-transform cursor-default"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent-blue animate-pulse" />
+                  {game}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 mt-3 italic">No gaming disciplines selected</p>
+          )}
         </div>
       </div>
 
@@ -148,23 +164,51 @@ export default function PersonaUpdateForm({ profile }: PersonaUpdateFormProps) {
           </div>
 
           <div className="space-y-4">
-            <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground ml-1">Gaming Disciplines</label>
-            <div className="grid grid-cols-2 gap-3">
-              {AVAILABLE_GAMES.map((game) => (
+            <div className="flex items-center justify-between ml-1">
+              <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground">Gaming Disciplines</label>
+              {isExpanded && (
                 <button
-                  key={game}
                   type="button"
-                  onClick={() => toggleGame(game)}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${selectedGames.includes(game)
-                      ? 'bg-accent-blue text-white border-accent-blue shadow-lg shadow-accent-blue/20'
-                      : 'bg-muted/30 border-border text-muted-foreground hover:border-border/80'
-                    }`}
+                  onClick={() => setIsExpanded(false)}
+                  className="flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-accent-blue hover:text-accent-blue/80 transition-colors cursor-pointer"
                 >
-                  <Gamepad2 size={16} />
-                  {game}
+                  <ChevronUp size={14} />
+                  Collapse
                 </button>
-              ))}
+              )}
             </div>
+
+            {!isExpanded ? (
+              <button
+                type="button"
+                onClick={() => setIsExpanded(true)}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4.5 rounded-2xl border border-dashed border-border/80 bg-muted/10 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:bg-muted/20 hover:text-foreground transition-all hover:scale-[1.01] active:scale-[0.99] group/btn cursor-pointer"
+              >
+                <Gamepad2 size={16} className="text-accent-blue group-hover/btn:rotate-12 transition-transform" />
+                <span>Expand Gaming Disciplines ({AVAILABLE_GAMES.length} Options)</span>
+                <ChevronDown size={14} className="text-muted-foreground/60 ml-1 group-hover/btn:translate-y-0.5 transition-transform" />
+              </button>
+            ) : (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="grid grid-cols-2 gap-3">
+                  {AVAILABLE_GAMES.map((game) => (
+                    <button
+                      key={game}
+                      type="button"
+                      onClick={() => toggleGame(game)}
+                      className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer ${
+                        selectedGames.includes(game)
+                          ? 'bg-accent-blue text-white border-accent-blue shadow-lg shadow-accent-blue/20'
+                          : 'bg-muted/30 border-border text-muted-foreground hover:border-border/80'
+                      }`}
+                    >
+                      <Gamepad2 size={16} />
+                      {game}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
